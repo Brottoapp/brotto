@@ -1410,8 +1410,11 @@ function renderStatement(elId, mi, opts={}){
   if(txs.length > stmtShown[elId])
     h += '<div class="btnrow"><button class="btn secondary small" style="width:100%" onclick="stmtMore(\''+elId+'\')">'
       + L('Ver mais ('+(txs.length-stmtShown[elId])+' restantes) ↓','Mehr anzeigen ('+(txs.length-stmtShown[elId])+' übrig) ↓')+'</button></div>';
-  if(opts.pdf) h += '<div class="btnrow"><button class="btn secondary small" onclick="toast(\'📄 GET /core-connect/statements/{walletId}/computed?month='
-    +String(5+mi).padStart(2,'0')+'&year=2026 — PDF oficial gerado pela Treezor\')"><span class="msy inl">&#xE873;</span> Baixar extrato oficial (PDF)</button></div>';
+  if(opts.pdf) h += '<div class="btnrow"><button class="btn secondary small" style="width:100%" onclick="openStmtPdf('+mi+')">'
+    + '<span class="msy inl">&#xE873;</span> '+L('Baixar extrato em PDF','Kontoauszug als PDF')+'</button></div>'
+    + '<div class="note" style="margin-top:6px">'+L('Documento da família, gerado aqui. Em produção o extrato oficial da instituição vem da Treezor (GET /core-connect/statements/{walletId}/computed?month='
+      +String(5+mi).padStart(2,'0')+'&year=2026).','Familiendokument, hier erzeugt. In Produktion kommt der offizielle Kontoauszug von Treezor (GET /core-connect/statements/{walletId}/computed?month='
+      +String(5+mi).padStart(2,'0')+'&year=2026).')+'</div>';
   el.innerHTML = h;
 }
 // Transaction enrichment: merchantName bruto → marca, logo e localização
@@ -2236,7 +2239,7 @@ function render(){
   const bn = document.getElementById('baasChildName'); if(bn) bn.textContent = state.name;
   if(teenM>curM()) teenM = curM();
   if(parentM>curM()) parentM = curM();
-  renderStatement('txList', teenM, {nav:'teenStmtNav'});
+  renderStatement('txList', teenM, {nav:'teenStmtNav', pdf:true});
   const tmf=document.getElementById('tMoneyFlow'); if(tmf) tmf.innerHTML = moneyFlowCardHtml(false);
   const kgr=document.getElementById('kGrowth'); if(kgr) kgr.innerHTML = growthHtml(true);
   const tgr=document.getElementById('tGrowth'); if(tgr) tgr.innerHTML = growthHtml(false);
@@ -2366,51 +2369,58 @@ function spend(v,name,icon,opts={}){
   // Autorização como na Treezor: lock → permsGroup → MCC blacklist → limites → saldo
   const C = state.card;
   const decline = (paraCrianca, detalhe, avisoPai)=>{
-    addTx(name+' — não passou', detalhe, 0, '🚫', 'despesa');
+    addTx(L(name+' — não passou', TRD(name)+' — nicht durchgegangen'), detalhe, 0, '🚫', 'despesa');
     informParent('🚫', avisoPai);
     toast('🚫 '+paraCrianca);
     render();
   };
   if(C.frozen)
-    return decline('Seu cartão está congelado — fala com seu responsável. 💛', 'cartão congelado (lock)',
-      'Tentativa de compra com o cartão congelado: <b>'+name+'</b> ('+fmt0(v)+').');
+    return decline(L('Seu cartão está congelado — fala com seu responsável. 💛','Deine Karte ist eingefroren — sprich mit deinen Eltern. 💛'),
+      L('cartão congelado (lock)','Karte eingefroren (Lock)'),
+      L('Tentativa de compra com o cartão congelado: <b>'+name+'</b> ('+fmt0(v)+').','Kaufversuch mit eingefrorener Karte: <b>'+TRD(name)+'</b> ('+fmt0(v)+').'));
   if(opts.country && opts.country!=='DE' && !(C.travel && C.travel.cc===opts.country) && !C.perms.intl)
-    return decline('Seu cartão só funciona fora da Alemanha no Modo Viagem — pede pro seu responsável ligar. ✈️',
-      'país fora do combinado ('+opts.country+') · sem modo viagem',
-      'Tentativa de compra no exterior (<b>'+opts.country+'</b>) sem modo viagem: <b>'+name+'</b> ('+fmt0(v)+').');
+    return decline(L('Seu cartão só funciona fora da Alemanha no Modo Viagem — pede pro seu responsável ligar. ✈️','Deine Karte funktioniert außerhalb Deutschlands nur im Reisemodus — bitte deine Eltern, ihn einzuschalten. ✈️'),
+      L('país fora do combinado ('+opts.country+') · sem modo viagem','Land außerhalb der Vereinbarung ('+opts.country+') · kein Reisemodus'),
+      L('Tentativa de compra no exterior (<b>'+opts.country+'</b>) sem modo viagem: <b>'+name+'</b> ('+fmt0(v)+').','Kaufversuch im Ausland (<b>'+opts.country+'</b>) ohne Reisemodus: <b>'+TRD(name)+'</b> ('+fmt0(v)+').'));
   if(opts.online && !C.perms.online)
-    return decline('Compras online estão desligadas no seu cartão.', 'compras online desativadas',
-      'Tentativa de compra online com o online desativado: <b>'+name+'</b>.');
+    return decline(L('Compras online estão desligadas no seu cartão.','Online-Käufe sind auf deiner Karte deaktiviert.'),
+      L('compras online desativadas','Online-Käufe deaktiviert'),
+      L('Tentativa de compra online com o online desativado: <b>'+name+'</b>.','Online-Kaufversuch bei deaktivierten Online-Käufen: <b>'+TRD(name)+'</b>.'));
   // categoria da compra (mesma taxonomia fina dos combinados) — resolvida cedo p/ o bloqueio por categoria
   const ov = opts.merchant ? state.catOverrides[opts.merchant] : undefined;
   const fineCat = ov !== undefined ? ov
     : (opts.merchant && MERCH[opts.merchant] ? MERCH[opts.merchant].cat
     : (opts.mcc ? catOfMcc(opts.mcc).name : null));
   if(isCatBlocked(fineCat))
-    return decline('Essa categoria está bloqueada no seu cartão. É o combinado te protegendo!',
-      'categoria bloqueada · '+fineCat+(opts.mcc?' · MCC '+opts.mcc:''),
-      'Tentativa em categoria bloqueada (<b>'+fineCat+'</b>): <b>'+name+'</b> ('+fmt0(v)+').');
+    return decline(L('Essa categoria está bloqueada no seu cartão. É o combinado te protegendo!','Diese Kategorie ist auf deiner Karte gesperrt. Die Vereinbarung schützt dich!'),
+      L('categoria bloqueada · '+fineCat+(opts.mcc?' · MCC '+opts.mcc:''),'Kategorie gesperrt · '+TRD(fineCat)+(opts.mcc?' · MCC '+opts.mcc:'')),
+      L('Tentativa em categoria bloqueada (<b>'+fineCat+'</b>): <b>'+name+'</b> ('+fmt0(v)+').','Versuch in gesperrter Kategorie (<b>'+TRD(fineCat)+'</b>): <b>'+TRD(name)+'</b> ('+fmt0(v)+').'));
   if(v > C.limits.tx)
-    return decline('Passou do teto por compra ('+fmt0(C.limits.tx)+').', 'acima do teto por compra',
-      'Compra acima do teto por transação: <b>'+name+'</b> ('+fmt0(v)+' > '+fmt0(C.limits.tx)+').');
+    return decline(L('Passou do teto por compra ('+fmt0(C.limits.tx)+').','Über dem Limit pro Kauf ('+fmt0(C.limits.tx)+').'),
+      L('acima do teto por compra','über dem Limit pro Kauf'),
+      L('Compra acima do teto por transação: <b>'+name+'</b> ('+fmt0(v)+' > '+fmt0(C.limits.tx)+').','Kauf über dem Transaktionslimit: <b>'+TRD(name)+'</b> ('+fmt0(v)+' > '+fmt0(C.limits.tx)+').'));
   const sc = C.spent || (C.spent = {d:0, w:0, m:0});
   if(C.limits.d && sc.d + v > C.limits.d)
-    return decline('Passou do limite de hoje ('+fmt0(C.limits.d)+'/dia — já foi '+fmt0(sc.d)+').', 'acima do limite diário (acumulado)',
-      'Compra acima do limite diário: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.d)+'/'+fmt0(C.limits.d)+' hoje).');
+    return decline(L('Passou do limite de hoje ('+fmt0(C.limits.d)+'/dia — já foi '+fmt0(sc.d)+').','Über dem Tageslimit ('+fmt0(C.limits.d)+'/Tag — schon '+fmt0(sc.d)+').'),
+      L('acima do limite diário (acumulado)','über dem Tageslimit (kumuliert)'),
+      L('Compra acima do limite diário: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.d)+'/'+fmt0(C.limits.d)+' hoje).','Kauf über dem Tageslimit: <b>'+TRD(name)+'</b> ('+fmt0(v)+'; schon '+fmt0(sc.d)+'/'+fmt0(C.limits.d)+' heute).'));
   if(C.limits.w && sc.w + v > C.limits.w)
-    return decline('Passou do limite da semana ('+fmt0(C.limits.w)+' — já foi '+fmt0(sc.w)+').', 'acima do limite semanal (acumulado)',
-      'Compra acima do limite semanal: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.w)+'/'+fmt0(C.limits.w)+').');
+    return decline(L('Passou do limite da semana ('+fmt0(C.limits.w)+' — já foi '+fmt0(sc.w)+').','Über dem Wochenlimit ('+fmt0(C.limits.w)+' — schon '+fmt0(sc.w)+').'),
+      L('acima do limite semanal (acumulado)','über dem Wochenlimit (kumuliert)'),
+      L('Compra acima do limite semanal: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.w)+'/'+fmt0(C.limits.w)+').','Kauf über dem Wochenlimit: <b>'+TRD(name)+'</b> ('+fmt0(v)+'; schon '+fmt0(sc.w)+'/'+fmt0(C.limits.w)+').'));
   if(C.limits.m && sc.m + v > C.limits.m)
-    return decline('Passou do limite do mês ('+fmt0(C.limits.m)+' — já foi '+fmt0(sc.m)+').', 'acima do limite mensal (acumulado)',
-      'Compra acima do limite mensal: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.m)+'/'+fmt0(C.limits.m)+').');
+    return decline(L('Passou do limite do mês ('+fmt0(C.limits.m)+' — já foi '+fmt0(sc.m)+').','Über dem Monatslimit ('+fmt0(C.limits.m)+' — schon '+fmt0(sc.m)+').'),
+      L('acima do limite mensal (acumulado)','über dem Monatslimit (kumuliert)'),
+      L('Compra acima do limite mensal: <b>'+name+'</b> ('+fmt0(v)+'; já '+fmt0(sc.m)+'/'+fmt0(C.limits.m)+').','Kauf über dem Monatslimit: <b>'+TRD(name)+'</b> ('+fmt0(v)+'; schon '+fmt0(sc.m)+'/'+fmt0(C.limits.m)+').'));
   const bud = budgetForCat(fineCat) || (opts.mcc && !fineCat ? budgetForCat(catOfMcc(opts.mcc).name) : null);
   if(bud && bud.locked)
-    return decline('Seu combinado de '+bud.name+' deste mês já acabou ('+fmt0(bud.cap)+'). Mês que vem volta! '+bud.icon,
-      'orçamento "'+bud.name+'" estourado · categorias bloqueadas até o fim do mês',
-      'Compra barrada pelo combinado de <b>'+bud.name+'</b> que '+state.name+' criou ('+fmt0(bud.cap)+'/mês): <b>'+name+'</b>.');
+    return decline(L('Seu combinado de '+bud.name+' deste mês já acabou ('+fmt0(bud.cap)+'). Mês que vem volta! '+bud.icon,'Deine Vereinbarung '+TRD(bud.name)+' ist für diesen Monat aufgebraucht ('+fmt0(bud.cap)+'). Nächsten Monat geht es weiter! '+bud.icon),
+      L('orçamento "'+bud.name+'" estourado · categorias bloqueadas até o fim do mês','Budget "'+TRD(bud.name)+'" ausgeschöpft · Kategorien bis Monatsende gesperrt'),
+      L('Compra barrada pelo combinado de <b>'+bud.name+'</b> que '+state.name+' criou ('+fmt0(bud.cap)+'/mês): <b>'+name+'</b>.','Kauf blockiert durch die Vereinbarung <b>'+TRD(bud.name)+'</b>, die '+state.name+' erstellt hat ('+fmt0(bud.cap)+'/Monat): <b>'+TRD(name)+'</b>.'));
   if(state.balances.despesa < v)
-    return decline('Faltou saldo no cartão. Esperar a mesada também é estratégia! 🧘', 'saldo insuficiente',
-      'Compra recusada por saldo: <b>'+name+'</b> ('+fmt0(v)+').');
+    return decline(L('Faltou saldo no cartão. Esperar a mesada também é estratégia! 🧘','Nicht genug Guthaben auf der Karte. Aufs Taschengeld warten ist auch eine Strategie! 🧘'),
+      L('saldo insuficiente','Guthaben nicht ausreichend'),
+      L('Compra recusada por saldo: <b>'+name+'</b> ('+fmt0(v)+').','Kauf mangels Guthaben abgelehnt: <b>'+TRD(name)+'</b> ('+fmt0(v)+').'));
   state.balances.despesa -= v;
   state.spendMonth.despesa += v;
   sc.d = Math.round((sc.d+v)*100)/100; sc.w = Math.round((sc.w+v)*100)/100; sc.m = Math.round((sc.m+v)*100)/100;
@@ -2419,11 +2429,11 @@ function spend(v,name,icon,opts={}){
     if(bud.spent >= bud.cap && bud.hard && !bud.locked){
       bud.locked = true;   // no produto real: MCCs do grupo entram na blacklist até o mês virar
       informParent('🔐', L('O combinado de <b>'+bud.name+'</b> de '+state.name+' chegou no teto ('+fmt0(bud.cap)
-        +') — categorias travadas até o fim do mês, como a própria criança configurou.','Die Vereinbarung <b>'+bud.name+'</b> von '+state.name+' hat das Limit erreicht ('+fmt0(bud.cap)
+        +') — categorias travadas até o fim do mês, como a própria criança configurou.','Die Vereinbarung <b>'+TRD(bud.name)+'</b> von '+state.name+' hat das Limit erreicht ('+fmt0(bud.cap)
         +') — Kategorien bis Monatsende gesperrt, wie das Kind es selbst eingestellt hat.'));
-      setTimeout(()=>toast(L(bud.icon+' Seu combinado de '+bud.name+' fechou por este mês — você que mandou! 💪',bud.icon+' Deine Vereinbarung '+bud.name+' ist für diesen Monat geschlossen — du hast entschieden! 💪')), 1800);
+      setTimeout(()=>toast(L(bud.icon+' Seu combinado de '+bud.name+' fechou por este mês — você que mandou! 💪',bud.icon+' Deine Vereinbarung '+TRD(bud.name)+' ist für diesen Monat geschlossen — du hast entschieden! 💪')), 1800);
     } else if(bud.spent >= bud.cap*0.8 && !bud.locked){
-      setTimeout(()=>toast(L(bud.icon+' Atenção: já foi '+fmt0(bud.spent)+' dos '+fmt0(bud.cap)+' do seu combinado de '+bud.name+'.',bud.icon+' Achtung: schon '+fmt0(bud.spent)+' von '+fmt0(bud.cap)+' deiner Vereinbarung '+bud.name+'.')), 1800);
+      setTimeout(()=>toast(L(bud.icon+' Atenção: já foi '+fmt0(bud.spent)+' dos '+fmt0(bud.cap)+' do seu combinado de '+bud.name+'.',bud.icon+' Achtung: schon '+fmt0(bud.spent)+' von '+fmt0(bud.cap)+' deiner Vereinbarung '+TRD(bud.name)+'.')), 1800);
     }
   }
     const m = opts.merchant && MERCH[opts.merchant];
@@ -2434,8 +2444,8 @@ function spend(v,name,icon,opts={}){
   state.txs[0].mcc = opts.mcc||null;
   state.txs[0].cat = catLabel;
   state.txs[0].budName = bud ? bud.name : null;
-  informParent(icon, L(state.name+' pagou <b>'+name+'</b> ('+fmt0(v)+') no cartão — Pilar da Despesa.',state.name+' hat <b>'+name+'</b> ('+fmt0(v)+') mit der Karte bezahlt — Säule Ausgaben.'));
-  toast('Pago: '+name+' ('+fmt(v)+')');
+  informParent(icon, L(state.name+' pagou <b>'+name+'</b> ('+fmt0(v)+') no cartão — Pilar da Despesa.',state.name+' hat <b>'+TRD(name)+'</b> ('+fmt0(v)+') mit der Karte bezahlt — Säule Ausgaben.'));
+  toast(L('Pago: '+name+' ('+fmt(v)+')','Bezahlt: '+TRD(name)+' ('+fmt(v)+')'));
   render();
 }
 function tryBlocked(){
@@ -2449,8 +2459,10 @@ function doTask(id){
     t.streak = (t.streak||0)+1;
     if(t.streak >= tTarget(t)){
       t.status='pending';
-      informParent('🔥', state.name+' completou todos os dias de <b>"'+t.name+'"</b> ('+tTarget(t)+'/'+tTarget(t)
-        +' · '+recLabel(t)+')! Libere a recompensa'+(t.rewardText?': '+t.rewardText:'')+'.');
+      informParent('🔥', L(state.name+' completou todos os dias de <b>"'+t.name+'"</b> ('+tTarget(t)+'/'+tTarget(t)
+        +' · '+recLabel(t)+')! Libere a recompensa'+(t.rewardText?': '+t.rewardText:'')+'.',
+        state.name+' hat alle Tage von <b>"'+TRD(t.name)+'"</b> geschafft ('+tTarget(t)+'/'+tTarget(t)
+        +' · '+recLabel(t)+')! Belohnung freigeben'+(t.rewardText?': '+TRD(t.rewardText):'')+'.'));
       toast(L('🔥 SEMANA COMPLETA! '+tTarget(t)+'/'+tTarget(t)+' — seu responsável vai liberar o prêmio!','🔥 WOCHE KOMPLETT! '+tTarget(t)+'/'+tTarget(t)+' — deine Eltern geben die Belohnung frei!'));
       confetti(12);
     } else {
@@ -2526,7 +2538,7 @@ function addTx(name,sub,amt,icon,pillar=null,merchant=null){
 // navegação de meses (modelo Account Statements da Treezor)
 let teenM = 99, parentM = 99, jarM = 99, kMoneyM = 99, spendCardM = 99, incomeCardM = 99, flowM = 99, jarKeyOpen = null;
 function teenStmtNav(d){ teenM = Math.max(0, Math.min(curM(), teenM+d));
-  renderStatement('txList', teenM, {nav:'teenStmtNav'}); }
+  renderStatement('txList', teenM, {nav:'teenStmtNav', pdf:true}); }
 function kMoneyNav(d){ kMoneyM = Math.max(0, Math.min(curM(), kMoneyM+d));
   renderStatement('kMoneyStmt', kMoneyM, {kid:true, nav:'kMoneyNav'}); }
 function parentStmtNav(d){ parentM = Math.max(0, Math.min(curM(), parentM+d));
@@ -2616,9 +2628,25 @@ const KID_TIPS_DE = {
   ],
 };
 // helper de frase inteira por idioma
-function L(pt, de){ return (typeof LANG!=='undefined' && LANG==='de') ? de : pt; }
+// L() guarda o par PT/DE de tudo o que passa por aqui. Assim uma frase gravada
+// no feed (que congela o idioma do momento) pode ser reconvertida ao trocar de língua.
+const _LDE = new Map(), _LPT = new Map();
+function L(pt, de){
+  if(typeof pt==='string' && typeof de==='string' && de!==pt){
+    if(_LDE.size > 1500){ _LDE.clear(); _LPT.clear(); }
+    _LDE.set(pt, de); _LPT.set(de, pt);
+  }
+  return (typeof LANG!=='undefined' && LANG==='de') ? de : pt;
+}
+// BI: devolve a frase no idioma atual, mesmo que tenha sido gravada no outro.
+function BI(t){
+  if(typeof t!=='string') return t;
+  return (typeof LANG!=='undefined' && LANG==='de') ? (_LDE.get(t) || t) : (_LPT.get(t) || t);
+}
 // traduz um VALOR de dado (nome de sonho, descrição de transação — seed) interpolado em frases
 function TR(s){ return (typeof LANG!=='undefined' && LANG==='de' && typeof I18N!=='undefined' && I18N[s]!==undefined) ? I18N[s] : s; }
+// TRD: versão alemã do termo, independente do idioma ativo (para montar o par PT/DE)
+function TRD(s){ return (typeof I18N!=='undefined' && I18N[s]!==undefined) ? I18N[s] : s; }
 const tipIdx = {home:0, sonho:0, tarefas:0, cartao:0, negocio:0};
 function pGo(tab){
   ['inicio','rel','ptarefas','pcartao','comb'].forEach(t=>{
@@ -2935,20 +2963,33 @@ function renderFox(){
 }
 
 let FOXQ=null;
+// FOXQVIEW: qual tela do quiz está aberta, para poder redesenhar ao trocar de idioma
+let FOXQVIEW=null;
 function openFoxQuiz(){ FOXQ={qs:foxQuizToday(), i:0, correct:0}; foxQuizRender(); }
+// Redesenha o quiz aberto no idioma atual (chamado por setLang)
+function foxQuizRelang(){
+  if(!FOXQ || !FOXQVIEW) return;
+  if(FOXQVIEW.mode==='a') foxAnswerRender(FOXQVIEW.idx); else foxQuizRender();
+}
 function foxQuizRender(){
   const s=FOXQ; if(!s) return; if(s.i>=s.qs.length) return foxQuizDone();
+  FOXQVIEW={mode:'q'};
   const q=s.qs[s.i];
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(56,{stage:ensureFox().stage})+'</div>'
     + '<div class="klabel" style="text-align:center">'+L('Quiz da raposinha','Fuchs-Quiz')+' · '+(s.i+1)+'/'+s.qs.length+'</div>'
-    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:6px 2px 14px">'+q.q+'</div>'
-    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+opt+'</button>').join(''));
+    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:6px 2px 14px">'+BI(q.q)+'</div>'
+    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+BI(opt)+'</button>').join(''));
 }
 function foxAnswer(idx){
-  const s=FOXQ; if(!s) return; const q=s.qs[s.i]; const ok=idx===q.c; if(ok) s.correct++;
+  const s=FOXQ; if(!s) return; if(idx===s.qs[s.i].c) s.correct++;
+  foxAnswerRender(idx);
+}
+function foxAnswerRender(idx){
+  const s=FOXQ; if(!s) return; const q=s.qs[s.i]; const ok=idx===q.c;
+  FOXQVIEW={mode:'a', idx:idx};
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(64,{glow:ok, stage:ensureFox().stage})+(ok?' <span style="font-size:34px">🎉</span>':'')+'</div>'
     + '<div class="sh-title" style="text-align:center">'+(ok?L('Acertou!','Richtig!'):L('Quase!','Fast!'))+'</div>'
-    + '<div class="sh-sub" style="text-align:center">'+q.tip+'</div>'
+    + '<div class="sh-sub" style="text-align:center">'+BI(q.tip)+'</div>'
     + '<button class="kbtn" style="margin-top:14px" onclick="foxNext()">'+((s.i+1>=s.qs.length)?L('Ver resultado ›','Ergebnis ›'):L('Próxima ›','Weiter ›'))+'</button>');
 }
 function foxNext(){ const s=FOXQ; if(!s) return; s.i++; foxQuizRender(); }
@@ -2964,7 +3005,7 @@ function foxQuizDone(){
     + '<div class="sh-sub" style="text-align:center">'+L('Você acertou '+s.correct+' de '+s.qs.length+' · +'+gain+' de energia','Du hattest '+s.correct+' von '+s.qs.length+' richtig · +'+gain+' Energie')+'</div>'
     + (card?'<div class="kcard" style="margin-top:14px;text-align:left"><div class="klabel">'+L('nova carta de sabedoria 📜','neue Weisheitskarte 📜')+'</div><div class="kn" style="font-size:15px">'+L(card.t[0],card.t[1])+'</div><div class="ks">'+L(card.b[0],card.b[1])+'</div></div>':'')
     + '<button class="kbtn" style="margin-top:14px" onclick="closeSheet();render()">'+L('Oba! 🎉','Juhu! 🎉')+'</button>');
-  FOXQ=null;
+  FOXQ=null; FOXQVIEW=null;
 }
 
 function openFoxWorld(){
@@ -3444,7 +3485,8 @@ function moveFree(pk, wid){
   w.saved = Math.round((w.saved + amt)*100)/100;
   w.history = w.history || [];
   w.history.unshift({day:'hoje', name:'Moedinhas livres guardadas aqui', amt:amt, icon:'💰'});
-  informParent('💰', state.name+' guardou '+fmt0(amt)+' das moedinhas livres na casinha <b>"'+w.name+'"</b> ('+SHEET_HEAD[pk].t+').');
+  informParent('💰', L(state.name+' guardou '+fmt0(amt)+' das moedinhas livres na casinha <b>"'+w.name+'"</b> ('+SHEET_HEAD[pk].t+').',
+    state.name+' hat '+fmt0(amt)+' der freien Münzen im Häuschen <b>"'+TRD(w.name)+'"</b> gespart ('+TRD(SHEET_HEAD[pk].t)+').'));
   if(w.saved >= w.price - 0.009 && w.auto){ closeSheet(); checkAutoRedeem(); render(); return; }
   toast('💰 '+fmt0(amt)+' guardados em "'+w.name+'"!'+(w.saved>=w.price-0.009?' Você chegou lá! 🎉':''));
   render();
@@ -3963,8 +4005,10 @@ function reconTx(txid, bi, kind, reopen){
       t.kind = 'ativo';                            // insumo de negócio é investimento — classifica sozinho
     }
     const lucro = Math.round((b.revenue - b.cost)*100)/100;
-    informParent('💼', state.name+' conciliou '+(kind==='receita'?'uma entrada de ':'um custo de ')+fmt0(v)
-      + ' no negocinho <b>'+b.name+'</b> — lucro real: <b>'+fmt0(lucro)+'</b>.');
+    informParent('💼', L(state.name+' conciliou '+(kind==='receita'?'uma entrada de ':'um custo de ')+fmt0(v)
+      + ' no negocinho <b>'+b.name+'</b> — lucro real: <b>'+fmt0(lucro)+'</b>.',
+      state.name+' hat '+(kind==='receita'?'eine Einnahme von ':'einen Kostenposten von ')+fmt0(v)
+      + ' im kleinen Geschäft <b>'+TRD(b.name)+'</b> abgeglichen — echter Gewinn: <b>'+fmt0(lucro)+'</b>.'));
     toast(kind==='receita'
       ? L('💼 +'+fmt0(v)+' de receita em "'+b.name+'". Lucro real: '+fmt0(lucro)+'.','💼 +'+fmt0(v)+' Einnahme in "'+b.name+'". Echter Gewinn: '+fmt0(lucro)+'.')
       : L('💼 custo de '+fmt0(v)+' em "'+b.name+'". Lucro real: '+fmt0(lucro)+'.','💼 Kosten von '+fmt0(v)+' in "'+b.name+'". Echter Gewinn: '+fmt0(lucro)+'.'));
@@ -4399,7 +4443,8 @@ function submitRedeem(){
   state.requests.push({id:++reqSeq, pillar:w.pillar, wishId:w.id||null, name:w.name,
     price:amt, target:w.id===0?null:w.price, reason, icon:w.icon,
     early: amt > (w.id===0 ? state.balances.defesa : w.saved), status:'pending'});
-  informParent('🔔', 'Pedido de resgate: <b>'+w.name+'</b> · '+fmt0(amt)+' · 💬 <i>"'+reason+'"</i>');
+  informParent('🔔', L('Pedido de resgate: <b>'+w.name+'</b> · '+fmt0(amt)+' · 💬 <i>"'+reason+'"</i>',
+    'Auszahlungsantrag: <b>'+TRD(w.name)+'</b> · '+fmt0(amt)+' · 💬 <i>"'+reason+'"</i>'));
   toast('🔔 Pedido de '+fmt0(amt)+' enviado! Seu responsável já recebeu a notificação.');
   render();
 }
@@ -4602,7 +4647,8 @@ function savePin(who){
   if(['0000','1234','1111'].includes(v)){ toast('Esse PIN é fácil demais de adivinhar — escolhe outro! 🕵️'); return; }
   closeSheet();
   toast('🔐 SCA confirmada no telefone — PIN atualizado no cartão.');
-  if(who==='teen') informParent('🔐', state.name+' trocou o PIN do cartão (SCA confirmada no dispositivo).');
+  if(who==='teen') informParent('🔐', L(state.name+' trocou o PIN do cartão (SCA confirmada no dispositivo).',
+    state.name+' hat die Karten-PIN geändert (SCA auf dem Gerät bestätigt).'));
   else informChild('🔐 Seu responsável definiu um PIN novo para o seu cartão — pergunte a ele!');
 }
 function unblockPin(){
@@ -5258,7 +5304,8 @@ function famContrib(v, fromParent){
     if(state.balances.desejo < v){ toast(L('Seu cofrinho Sonhar não tem '+fmt0(v)+' agora.','Dein Sparschwein Träumen hat gerade nicht '+fmt0(v)+'.')); return; }
     state.balances.desejo -= v; g.contrib[state.name] = (g.contrib[state.name]||0)+v;
     addTx('Sonho da família',L('minha parte na '+g.name,'mein Anteil an '+g.name), -v, g.icon, 'desejo');
-    informParent(g.icon, state.name+' colocou '+fmt0(v)+' no sonho da família — remando junto!');
+    informParent(g.icon, L(state.name+' colocou '+fmt0(v)+' no sonho da família — remando junto!',
+      state.name+' hat '+fmt0(v)+' zum Familientraum beigetragen — alle ziehen mit!'));
   }
   g.saved += v;
   confetti(6);
@@ -5950,6 +5997,343 @@ function simulateGift(targetWid){
   render();
 }
 
+// ===== DOCUMENTOS PDF (extrato + relatório) — papel timbrado, marca d'água da raposa =====
+// Um documento A4 de verdade, montado num iframe isolado e enviado para a impressão
+// do navegador ("Salvar como PDF"). Isolado de propósito: o app é uma tela de celular,
+// o documento é papel — não devem compartilhar CSS.
+// Em produção o extrato oficial da conta também é emitido pela Treezor
+// (GET /core-connect/statements/{walletId}/computed); este é o documento da família.
+const PDF_C = {despesa:'#2a78d6', desenv:'#eb6834', desejo:'#1baf7a', defesa:'#eda100', dign:'#e87ba4',
+  ink:'#171614', good:'#199e70', line:'#eae8e3', muted:'#8a8a86'};
+function pdfP5(){ return [
+  {k:'despesa', n:L('Dia-a-dia','Alltag'),   c:PDF_C.despesa},
+  {k:'desenv',  n:L('Aprender','Lernen'),    c:PDF_C.desenv},
+  {k:'desejo',  n:L('Sonhar','Träumen'),     c:PDF_C.desejo},
+  {k:'defesa',  n:L('Guardar','Bewahren'),   c:PDF_C.defesa},
+  {k:'dign',    n:L('Ser livre','Frei sein'),c:PDF_C.dign},
+]; }
+// logo cubista (a mesma do app) — versão colorida para o timbre
+const PDF_LOGO = '<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
+  + '<g stroke="#171614" stroke-width="2" stroke-linejoin="round">'
+  + '<path d="M34 12 L52 34 L30 42 Z" fill="#A9A7A1"/><path d="M30 42 L60 36 L60 104 L38 80 L28 58 Z" fill="#DAD8D3"/>'
+  + '<path d="M90 42 L60 36 L60 104 L82 80 L92 58 Z" fill="#8f8d87"/><path d="M60 104 L50 72 L60 76 L70 72 Z" fill="#FFF"/>'
+  + '<path d="M44 58 L49 55 L54 58 L49 62 Z" fill="#FFF"/><path d="M67 59 Q72 55 76 59 Q72 62 67 59 Z" fill="#171614" stroke="none"/>'
+  + '<path d="M60 90 L55.5 82 L64.5 82 Z" fill="#171614" stroke="none"/></g>'
+  + '<path d="M80 36 L98 8 L97 22 L88 40 Z" fill="#3E9E57" stroke="#171614" stroke-width="2" stroke-linejoin="round"/>'
+  + '<path d="M92 14 L84 34" stroke="#256b3a" stroke-width="1.5" fill="none"/></svg>';
+// marca d'água: a mesma raposa, cheia, a 5% — fica em todas as páginas (position:fixed no print)
+const PDF_WM = '<div class="pagewm" aria-hidden="true"><svg viewBox="0 0 120 120">'
+  + '<path d="M34 12 L52 34 L30 42 Z"/><path d="M30 42 L60 36 L60 104 L38 80 L28 58 Z"/>'
+  + '<path d="M90 42 L60 36 L60 104 L82 80 L92 58 Z"/><path d="M80 36 L98 8 L97 22 L88 40 Z"/>'
+  + '<path d="M60 104 L50 72 L60 76 L70 72 Z"/></svg></div>';
+const PDF_CSS = '@page{size:A4;margin:14mm 13mm}'
+  + '*{box-sizing:border-box}'
+  + "body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#242422;font-size:12px;line-height:1.5;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}"
+  + '.top{border-bottom:3px solid #171614;padding-bottom:10px;margin-bottom:14px;display:flex;align-items:center;gap:12px}'
+  + '.top .logo{width:46px;height:46px;flex:none}'
+  + '.brand{font-size:23px;font-weight:800;letter-spacing:-.5px;line-height:1}'
+  + '.brand small{display:block;font-weight:600;color:#8a8a86;font-size:11px;letter-spacing:.3px;margin-top:2px}'
+  + '.top .when{margin-left:auto;text-align:right;color:#8a8a86;font-size:11px;line-height:1.45}'
+  + '.top .when b{color:#242422;font-size:12.5px}'
+  + '.pagewm{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:460px;height:460px;opacity:.05;z-index:0;pointer-events:none}'
+  + '.pagewm svg{width:100%;height:100%;fill:#171614}'
+  + '.top,.intro,.child,.quote,.foot,.box,h1,.sec,.opz{position:relative;z-index:1}'
+  + 'h1{font-size:16px;margin:0 0 2px}'
+  + '.intro{background:#f6f5f2;border-radius:12px;padding:12px 14px;margin-bottom:16px}'
+  + '.intro p{margin:0}'
+  + '.sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#8a8a86;margin:14px 0 6px;font-weight:700}'
+  + '.meta{width:100%;border-collapse:collapse;margin-bottom:6px}'
+  + '.meta td{padding:3px 0;font-size:11.5px;vertical-align:top}'
+  + '.meta td.k{color:#8a8a86;width:132px;text-transform:uppercase;font-size:9.5px;letter-spacing:.4px;padding-top:5px}'
+  + '.meta td.v{font-weight:650}'
+  + '.iban{font-variant-numeric:tabular-nums;letter-spacing:.3px}'
+  + '.boxes{display:flex;gap:8px;margin:4px 0 6px}'
+  + '.box{flex:1;border:1.5px solid #eae8e3;border-radius:11px;padding:9px 10px;background:rgba(255,255,255,.62)}'
+  + '.box .bl{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#8a8a86;font-weight:700}'
+  + '.box .bv{font-size:15px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}'
+  + '.box.in .bv{color:#199e70}.box.out .bv{color:#b23b2e}'
+  + '.opz{width:100%;border-collapse:collapse;margin-top:2px}'
+  + '.opz td{padding:6px 0;border-bottom:1px solid #f2f1ec;font-size:11.5px;vertical-align:middle}'
+  + '.opz tr.day td{border-bottom:none;padding:11px 0 1px;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:#8a8a86;font-weight:800}'
+  + '.opz td.ic{width:26px}'
+  + '.badge{width:21px;height:21px;border-radius:7px;color:#fff;font-weight:800;font-size:10.5px;display:flex;align-items:center;justify-content:center}'
+  + '.opz td.d{color:#8a8a86;font-size:10.5px;text-align:right;white-space:nowrap;padding-right:10px}'
+  + '.opz td.a{text-align:right;font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums;width:78px}'
+  + '.opz td.a.in{color:#199e70}'
+  + '.nm b{font-weight:650}.nm .sub{display:block;color:#8a8a86;font-size:10px}'
+  + '.child{border:1.5px solid #eae8e3;border-radius:14px;padding:14px 16px;margin-bottom:13px;break-inside:avoid;page-break-inside:avoid;background:rgba(255,255,255,.62)}'
+  + '.chead{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}'
+  + '.chead h2{margin:0;font-size:17px}'
+  + '.chead .age{color:#8a8a86;font-size:11px}'
+  + '.narr{font-style:italic;color:#3a3a37;margin:4px 0 12px}'
+  + '.cols{display:flex;gap:18px}.col{flex:1}'
+  + '.row{display:flex;align-items:center;gap:8px;margin:5px 0}'
+  + '.rlab{width:96px;font-size:11px}'
+  + '.track{flex:1;height:8px;background:#efeee9;border-radius:5px;overflow:hidden}'
+  + '.fill{height:100%;border-radius:5px}'
+  + '.rval{width:60px;text-align:right;font-weight:700;font-size:11px;font-variant-numeric:tabular-nums}'
+  + '.bud{width:100%;border-collapse:collapse}'
+  + '.bud td{padding:4px 0;border-bottom:1px solid #f0efea;font-size:11.5px}'
+  + '.bud .num{text-align:right;color:#55554f;white-space:nowrap}'
+  + '.bud .over{color:#c0392b;font-weight:700}'
+  + '.mini{margin-top:10px;font-size:11.5px}'
+  + '.mini > div{margin:4px 0}'
+  + '.mini .k{display:inline-block;min-width:74px;color:#8a8a86;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px}'
+  + '.good{color:#199e70}'
+  + '.advice{margin-top:12px;background:#f2f7f4;border:1px solid #d9ebe1;border-radius:10px;padding:10px 12px}'
+  + '.advice .atitle{font-weight:800;margin-bottom:3px}'
+  + '.muted{color:#a0a09a;font-size:11px}'
+  + '.quote{text-align:center;font-style:italic;color:#55554f;margin:14px 0 4px}'
+  + '.foot{margin-top:8px;color:#8a8a86;font-size:9.5px;text-align:center;border-top:1px solid #eee;padding-top:10px;line-height:1.5}';
+function pdfEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// documento impresso = documento formal: sem emoji (o app já faz isso no modo responsável)
+function pdfTxt(s){ try{ return stripEmoji(String(s==null?'':s)).replace(/\s{2,}/g,' ').trim(); }catch(e){ return String(s==null?'':s); } }
+function pdfRich(s){ return pdfTxt(s); }
+function pdfDate(){ const d=new Date();
+  const M_PT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const M_DE=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const m=(LANG==='de'?M_DE:M_PT)[d.getMonth()];
+  return String(d.getDate()).padStart(2,'0')+' '+m+' '+d.getFullYear(); }
+// casca comum: timbre + marca d'água + rodapé legal
+function pdfShell(o){
+  return '<!doctype html><html lang="'+(LANG==='de'?'de':'pt')+'"><head><meta charset="utf-8">'
+    + '<title>'+pdfEsc(o.file)+'</title><style>'+PDF_CSS+'</style></head><body>'
+    + PDF_WM
+    + '<div class="top">'+PDF_LOGO+'<div class="brand">Brotto<small>'+L('mesada com propósito','Taschengeld mit Sinn')+'</small></div>'
+    + '<div class="when">'+o.right+'</div></div>'
+    + o.body
+    + '<div class="foot">'+o.foot+'</div></body></html>';
+}
+// abre o documento numa moldura isolada e chama a impressão do navegador
+function printDoc(html){
+  try{
+    const old = document.getElementById('pdfFrame'); if(old) old.remove();
+    const f = document.createElement('iframe');
+    f.id='pdfFrame'; f.setAttribute('aria-hidden','true'); f.setAttribute('title','pdf');
+    f.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+    document.body.appendChild(f);
+    const d = f.contentWindow.document;
+    d.open(); d.write(html); d.close();
+    setTimeout(()=>{
+      try{ f.contentWindow.focus(); f.contentWindow.print(); }
+      catch(e){ pdfFail(); }
+      setTimeout(()=>{ try{ f.remove(); }catch(e){} }, 60000);
+    }, 400);
+    toast(L('📄 Documento pronto — escolha “Salvar como PDF”.','📄 Dokument fertig — wählen Sie „Als PDF speichern“.'));
+  }catch(e){ pdfFail(); }
+}
+function pdfFail(){
+  toast(L('Não consegui abrir a impressão aqui. Use o menu do navegador → Imprimir.',
+          'Drucken ließ sich hier nicht öffnen. Bitte Browser-Menü → Drucken.'));
+}
+function pdfSlug(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+function pdfBars(items){
+  const tot = items.reduce((a,b)=>a+b.val,0);
+  if(tot<=0) return '<div class="muted">'+L('sem movimentação','keine Bewegung')+'</div>';
+  return items.filter(x=>x.val>0).map(x=>{
+    const pct = Math.round(x.val/tot*100);
+    return '<div class="row"><div class="rlab">'+pdfEsc(x.n)+'</div>'
+      + '<div class="track"><div class="fill" style="width:'+pct+'%;background:'+x.c+'"></div></div>'
+      + '<div class="rval">'+fmt0(x.val)+'</div></div>';
+  }).join('');
+}
+function pdfSpark(h){
+  if(!h||h.length<2) return '';
+  const w=240,hh=42,pad=4, mn=Math.min(...h), mx=Math.max(...h), rng=(mx-mn)||1;
+  const pts=h.map((v,i)=>[pad+i*(w-2*pad)/(h.length-1), hh-pad-(v-mn)/rng*(hh-2*pad)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area='M'+pts[0][0].toFixed(1)+' '+(hh-pad)+' '+pts.map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+' L'+pts[pts.length-1][0].toFixed(1)+' '+(hh-pad)+' Z';
+  const last=pts[pts.length-1];
+  return '<svg viewBox="0 0 '+w+' '+hh+'" preserveAspectRatio="none" style="width:100%;height:38px;display:block;margin:2px 0 4px">'
+    + '<path d="'+area+'" fill="'+PDF_C.good+'" opacity=".12"/>'
+    + '<path d="'+line+'" fill="none" stroke="'+PDF_C.good+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.2" fill="'+PDF_C.good+'"/></svg>';
+}
+
+// ---------- EXTRATO ----------
+function stmtDocHtml(mi){
+  const c = state, md = monthData(mi), txs = (md.txs||[]).slice();
+  const P5 = pdfP5(), pilOf = k => (P5.find(p=>p.k===k)||{}).n || '';
+  const pilC  = k => PDF_C[k] || '#a9a7a1';
+  const ins  = txs.filter(t=>t.amt>0).reduce((a,t)=>a+t.amt,0);
+  const outs = txs.filter(t=>t.amt<0).reduce((a,t)=>a-t.amt,0);
+  const closed = md.close!=null;
+  const close = closed ? md.close
+    : Math.round(Object.values(c.balances).reduce((a,b)=>a+b,0)*100)/100;
+  // linhas, agrupadas por dia
+  let rows='', lastDay=null;
+  txs.forEach(t=>{
+    if(t.day && t.day!==lastDay){ rows += '<tr class="day"><td colspan="4">'+pdfEsc(TR(t.day))+'</td></tr>'; lastDay=t.day; }
+    const m = t.merchant && typeof MERCH!=='undefined' && MERCH[t.merchant];
+    const bg = m ? m.bg : (t.amt>0 ? PDF_C.good : pilC(t.pillar));
+    const ini = m ? m.ini : (pdfTxt(TR(t.name)).charAt(0)||'·').toUpperCase();
+    const nmT = pdfTxt(TR(t.name)).toLowerCase();
+    const segs0 = [t.pillar?pilOf(t.pillar):'', t.cat?TR(t.cat):'', t.sub?TR(t.sub):'']
+      .map(pdfTxt).filter(Boolean);
+    // um segmento some se já está contido em outro (ex.: "Sorveteria" dentro de "Sorveteria · Berlim · DE") ou no próprio nome
+    const sub = segs0.filter((x,i)=>{
+      const lx = x.toLowerCase();
+      if(lx===nmT) return false;
+      return !segs0.some((y,j)=>{ if(j===i) return false; const ly=y.toLowerCase();
+        return ly.indexOf(lx)>=0 && (ly.length>lx.length || j<i); });
+    }).join(' · ');
+    rows += '<tr><td class="ic"><div class="badge" style="background:'+bg+'">'+pdfEsc(ini)+'</div></td>'
+      + '<td class="nm"><b>'+pdfEsc(pdfTxt(TR(t.name)))+'</b>'+(sub?'<span class="sub">'+pdfEsc(sub)+'</span>':'')+'</td>'
+      + '<td class="d">'+(t.txid?'#'+t.txid:'')+'</td>'
+      + '<td class="a '+(t.amt>0?'in':'')+'">'+(t.amt===0?'—':(t.amt>0?'+':'−')+fmt(Math.abs(t.amt)))+'</td></tr>';
+  });
+  if(!rows) rows = '<tr><td colspan="4" class="muted">'+L('Sem movimentações neste período.','Keine Bewegungen in diesem Zeitraum.')+'</td></tr>';
+  // de onde veio / para onde foi
+  const srcMap={}; txs.forEach(t=>{ if(t.amt>0){ const k=incomeSrc(t); srcMap[k]=(srcMap[k]||0)+t.amt; } });
+  const inc = INCOME_SRC.filter(o=>srcMap[o.name]>0)
+    .map(o=>({n:jarSrcName(o.name), val:Math.round(srcMap[o.name]*100)/100, c:PDF_C.good}))
+    .sort((a,b)=>b.val-a.val);
+  const pilMap={}; txs.forEach(t=>{ if(t.amt<0 && t.pillar) pilMap[t.pillar]=(pilMap[t.pillar]||0)-t.amt; });
+  const sp = P5.filter(p=>pilMap[p.k]>0).map(p=>({n:p.n, val:Math.round(pilMap[p.k]*100)/100, c:p.c}));
+
+  const body = '<h1>'+L('Extrato da conta','Kontoauszug')+'</h1>'
+    + '<table class="meta"><tbody>'
+    + '<tr><td class="k">'+L('Titular','Kontoinhaber')+'</td><td class="v">'+pdfEsc(c.name)
+      + ' <span style="color:'+PDF_C.muted+';font-weight:500">· '+(c.phase<=1?L('3–10 anos','3–10 Jahre'):L('11+ anos','11+ Jahre'))+'</span></td></tr>'
+    + '<tr><td class="k">'+L('Período','Zeitraum')+'</td><td class="v">'+pdfEsc(TR(md.label))
+      + (closed?'':' <span style="color:'+PDF_C.muted+';font-weight:500">· '+L('em curso','laufend')+'</span>')+'</td></tr>'
+    + '<tr><td class="k">'+L('Conta do cartão','Kartenkonto')+'</td><td class="v iban">'+ACCOUNTS.card.iban+'</td></tr>'
+    + '<tr><td class="k">'+L('Conta do cofre','Tresorkonto')+'</td><td class="v iban">'+ACCOUNTS.cofre.iban+'</td></tr>'
+    + '</tbody></table>'
+    + '<div class="sec">'+L('Resumo do período','Zusammenfassung')+'</div>'
+    + '<div class="boxes">'
+    +   '<div class="box"><div class="bl">'+L('Saldo inicial','Anfangssaldo')+'</div><div class="bv">'+fmt0(md.open)+'</div></div>'
+    +   '<div class="box in"><div class="bl">'+L('Entrou','Eingegangen')+'</div><div class="bv">+'+fmt0(ins)+'</div></div>'
+    +   '<div class="box out"><div class="bl">'+L('Saiu','Ausgegeben')+'</div><div class="bv">−'+fmt0(outs)+'</div></div>'
+    +   '<div class="box"><div class="bl">'+(closed?L('Saldo final','Endsaldo'):L('Saldo atual','Aktueller Saldo'))+'</div><div class="bv">'+fmt0(close)+'</div></div>'
+    + '</div>'
+    + ((inc.length||sp.length) ? '<div class="cols">'
+        + '<div class="col"><div class="sec">'+L('De onde veio','Woher es kam')+'</div>'+pdfBars(inc)+'</div>'
+        + '<div class="col"><div class="sec">'+L('Para onde foi','Wohin es ging')+'</div>'+pdfBars(sp)+'</div>'
+      + '</div>' : '')
+    + '<div class="sec">'+L('Operações','Vorgänge')+' <span style="color:'+PDF_C.muted+';font-weight:600;text-transform:none;letter-spacing:0">('+txs.length+')</span></div>'
+    + '<table class="opz"><tbody>'+rows+'</tbody></table>';
+
+  const foot = L('Documento gerado pelo app Brotto em '+pdfDate()+' a partir da atividade real das contas. '
+      + 'As contas de moeda eletrônica são emitidas pela Treezor (instituição de moeda eletrônica licenciada, Grupo Société Générale) '
+      + 'e 100% salvaguardadas em conta segregada (Diretiva UE 2009/110). Método 5D: Dia-a-dia · Aprender · Sonhar · Guardar · Ser livre. '
+      + 'Informativo — não constitui aconselhamento financeiro.',
+    'Von der Brotto-App am '+pdfDate()+' aus der echten Kontoaktivität erstellt. '
+      + 'Die E-Geld-Konten werden von Treezor ausgegeben (lizenziertes E-Geld-Institut, Société Générale Gruppe) '
+      + 'und sind zu 100% auf einem getrennten Konto gesichert (EU-Richtlinie 2009/110). 5D-Methode: Alltag · Lernen · Träumen · Bewahren · Frei sein. '
+      + 'Informativ — keine Finanzberatung.');
+
+  return pdfShell({
+    file: 'Brotto_'+L('Extrato','Kontoauszug')+'_'+pdfSlug(c.name)+'_'+pdfSlug(md.label),
+    right: '<b>'+L('Extrato de conta','Kontoauszug')+'</b><br>'+pdfEsc(TR(md.label))+'<br>'+pdfEsc(c.name),
+    body: body, foot: foot });
+}
+function openStmtPdf(mi){ printDoc(stmtDocHtml(mi)); }
+
+// ---------- RELATÓRIO DA FAMÍLIA ----------
+function famDocHtml(period){
+  const wk = (period||famRepPeriod)==='week';
+  const P5 = pdfP5();
+  const jurosOf = c => ['defesa','dign'].reduce((a,k)=>a+((c.potHistory&&c.potHistory[k]||[]).filter(e=>/juros da fam/i.test(e.name)).reduce((s,e)=>s+e.amt,0)),0);
+  function narr(c){
+    const bestS=Math.max(0,...(c.tasks||[]).map(t=>t.streak||0));
+    const jmv=Math.round(jurosOf(c)*100)/100;
+    const over=(c.budgets||[]).some(b=>b.spent>=b.cap);
+    if(over) return L(c.name+' aproveitou bem o período e um combinado chegou no teto — que é justamente a hora mais rica para conversar. Não é hora de bronca: é a deixa para, juntos, decidir prioridades. No geral, um caminho saudável.',
+      c.name+' hat den Zeitraum gut genutzt und eine Vereinbarung hat das Limit erreicht — genau der wertvollste Moment für ein Gespräch. Kein Grund zu schimpfen: der Anlass, gemeinsam Prioritäten zu setzen. Insgesamt ein gesunder Weg.');
+    if(jmv>0 && bestS>=3) return L(c.name+' teve um período para comemorar: manteve a rotina de tarefas com constância e viu o dinheiro guardado render sozinho — a semente do "dinheiro trabalhando por você". Reconheçam esse esforço em voz alta.',
+      c.name+' hatte einen Zeitraum zum Feiern: die Aufgaben-Routine beständig gehalten und das Ersparte ist von allein gewachsen — der Samen des „Geld, das für dich arbeitet". Erkennt diese Mühe laut an.');
+    if(jmv>0) return L(c.name+' está no caminho certo: o que ficou guardado já começou a render sozinho. É um ótimo momento para reforçar, com uma conversa leve, por que guardar vale a pena.',
+      c.name+' ist auf einem guten Weg: das Ersparte hat begonnen, von allein zu wachsen. Ein guter Moment, um in einem lockeren Gespräch zu bestärken, warum Sparen sich lohnt.');
+    return L(c.name+' teve um período tranquilo e equilibrado. São os pequenos gestos repetidos que constroem o hábito — sigam com o combinado claro e a conversa aberta.',
+      c.name+' hatte einen ruhigen, ausgeglichenen Zeitraum. Es sind die kleinen, wiederholten Gesten, die die Gewohnheit aufbauen — bleibt bei der klaren Vereinbarung und dem offenen Gespräch.');
+  }
+  function childBlock(c){
+    const age = c.phase<=1?L('3–10 anos','3–10 Jahre'):L('11+ anos','11+ Jahre');
+    const h = c.history||[];
+    const best = Math.max(0,...(c.tasks||[]).map(t=>t.streak||0));
+    const jm = Math.round(jurosOf(c)*100)/100;
+    let s = '<section class="child"><div class="chead"><h2>'+pdfEsc(c.name)+'</h2>'
+      + '<div class="age">'+age+' · '+L('mesada','Taschengeld')+' '+fmt0(c.allowance?c.allowance.amount:0)+'/'
+      + (c.allowance && c.allowance.freq==='month' ? L('mês','Monat') : L('semana','Woche'))+'</div></div>'
+      + '<p class="narr">'+pdfTxt(narr(c))+'</p>';
+    if(h.length>1){
+      const grow = Math.round((h[h.length-1]-h[0])*100)/100;
+      s += '<div class="sec">'+L('Evolução · 8 semanas','Entwicklung · 8 Wochen')
+        + ' <span style="color:'+PDF_C.good+';font-weight:800">'+(grow>=0?'+':'−')+fmt0(Math.abs(grow))+'</span></div>'+pdfSpark(h);
+    }
+    if(wk){
+      const now = h.length?h[h.length-1]:0, prev = h.length>1?h[h.length-2]:now, d = Math.round((now-prev)*100)/100;
+      s += '<div class="boxes">'
+        + '<div class="box"><div class="bl">'+L('Dinheiro total','Gesamtgeld')+'</div><div class="bv">'+fmt0(now)+'</div></div>'
+        + '<div class="box '+(d>=0?'in':'out')+'"><div class="bl">'+L('Nesta semana','Diese Woche')+'</div><div class="bv">'+(d>=0?'+':'−')+fmt0(Math.abs(d))+'</div></div>'
+        + '<div class="box"><div class="bl">'+L('Melhor sequência','Beste Serie')+'</div><div class="bv">'+best+'</div></div>'
+        + '</div>';
+      const bs = (c.budgets||[]).slice(0,3);
+      if(bs.length){
+        s += '<div class="sec">'+L('Combinados de gasto','Ausgaben-Vereinbarungen')+'</div><table class="bud"><tbody>';
+        bs.forEach(b=>{ const left=Math.max(0,Math.round((b.cap-b.spent)*100)/100); const over=b.spent>=b.cap;
+          s += '<tr><td>'+pdfEsc(pdfTxt(TR(b.name)))+'</td><td class="num">'+L('usou ','genutzt ')+fmt0(b.spent)+L(' de ',' von ')+fmt0(b.cap)+'</td>'
+            + '<td class="num '+(over?'over':'')+'">'+(over?L('no teto','am Limit'):L('ainda tem ','noch ')+fmt0(left))+'</td></tr>'; });
+        s += '</tbody></table>';
+      }
+      s += '<div class="mini">'
+        + '<div><span class="k">'+L('Guardado','Gespart')+'</span> '+L('Guardar','Bewahren')+' <b>'+fmt0(c.balances.defesa)+'</b> · '
+        + L('Ser livre','Frei sein')+' <b>'+fmt0(c.balances.dign)+'</b>'
+        + (jm>0?' · '+L('rendeu','Zinsen')+' <b class="good">+'+fmt0(jm)+'</b>':'')+'</div>';
+      const wsw=(c.wishes||[]).filter(w=>w.pillar==='desejo');
+      if(wsw.length){ const w=wsw.slice().sort((a,b)=>(b.saved/b.price)-(a.saved/a.price))[0];
+        s += '<div><span class="k">'+L('Sonho','Traum')+'</span> '+pdfEsc(pdfTxt(TR(w.name)))+': '+fmt0(w.saved)+L(' de ',' von ')+fmt0(w.price)
+          + ' ('+Math.round(w.saved/w.price*100)+'%)</div>'; }
+      s += '</div>';
+    } else {
+      const sm = c.spendMonth||{};
+      const sp = P5.filter(p=>(sm[p.k]||0)>0).map(p=>({n:p.n, val:sm[p.k], c:p.c}));
+      const srcMap={}; (c.txs||[]).forEach(t=>{ if(t.amt>0){ const k=incomeSrc(t); srcMap[k]=(srcMap[k]||0)+t.amt; } });
+      const inc = INCOME_SRC.filter(o=>srcMap[o.name]>0)
+        .map(o=>({n:jarSrcName(o.name), val:Math.round(srcMap[o.name]*100)/100, c:PDF_C.good}))
+        .sort((a,b)=>b.val-a.val);
+      s += '<div class="cols">'
+        + '<div class="col"><div class="sec">'+L('De onde veio','Woher es kam')+'</div>'+pdfBars(inc)+'</div>'
+        + '<div class="col"><div class="sec">'+L('Para onde foi','Wohin es ging')+'</div>'+pdfBars(sp)+'</div></div>';
+      if((c.budgets||[]).length){
+        s += '<div class="sec">'+L('Combinados de gasto','Ausgaben-Vereinbarungen')+'</div><table class="bud"><tbody>';
+        (c.budgets||[]).forEach(b=>{ const pct=b.cap>0?Math.round(b.spent/b.cap*100):0; const over=b.spent>=b.cap;
+          s += '<tr><td>'+pdfEsc(pdfTxt(TR(b.name)))+'</td><td class="num">'+L('usou ','genutzt ')+fmt0(b.spent)+L(' de ',' von ')+fmt0(b.cap)+'</td>'
+            + '<td class="num '+(over?'over':'')+'">'+(over?L('no teto','am Limit'):pct+'%')+'</td></tr>'; });
+        s += '</tbody></table>';
+      }
+      s += '<div class="mini">'
+        + '<div><span class="k">'+L('Tarefas','Aufgaben')+'</span> '+L('melhor sequência','beste Serie')+' <b>'+best+'</b></div>'
+        + '<div><span class="k">'+L('Guardado','Gespart')+'</span> '+L('Guardar','Bewahren')+' <b>'+fmt0(c.balances.defesa)+'</b> · '
+        + L('Ser livre','Frei sein')+' <b>'+fmt0(c.balances.dign)+'</b>'
+        + (jm>0?' · '+L('rendeu','Zinsen')+' <b class="good">+'+fmt0(jm)+'</b>':'')+'</div>';
+      const ws=(c.wishes||[]).filter(w=>w.pillar==='desejo');
+      if(ws.length){ const w=ws.slice().sort((a,b)=>(b.saved/b.price)-(a.saved/a.price))[0];
+        s += '<div><span class="k">'+L('Sonho','Traum')+'</span> '+pdfEsc(pdfTxt(TR(w.name)))+': '+fmt0(w.saved)+L(' de ',' von ')+fmt0(w.price)
+          + ' ('+Math.round(w.saved/w.price*100)+'%)</div>'; }
+      s += '</div>';
+    }
+    const tips = childReportTips(c);
+    s += '<div class="advice"><div class="atitle">'+L('Conselho do livro','Tipp aus dem Buch')+'</div><div>'+pdfTxt(tips[0])+'</div></div>';
+    return s + '</section>';
+  }
+  const body = '<h1>'+L('Relatório da família','Familienbericht')+'</h1>'
+    + '<div class="intro"><p>'+L('Aqui está o retrato do período das crianças — não só os números, mas o que eles contam. A ideia não é vigiar, e sim ter uma boa conversa em família sobre dinheiro. Cada criança recebe, no fim, um <b>conselho do livro</b> pensado para o momento dela.',
+        'Hier ist das Bild des Zeitraums der Kinder — nicht nur die Zahlen, sondern was sie erzählen. Es geht nicht ums Überwachen, sondern darum, ein gutes Familiengespräch über Geld zu führen. Jedes Kind bekommt am Ende einen <b>Tipp aus dem Buch</b>, passend zu seinem Moment.')+'</p></div>'
+    + family.children.map(childBlock).join('')
+    + '<div class="quote">'+L('“A mesada não é sobre dinheiro — é sobre a pessoa que a criança vai se tornar.” — O Poder da Mesada',
+        '„Taschengeld geht nicht ums Geld — es geht um den Menschen, der das Kind wird.“ — O Poder da Mesada')+'</div>';
+  const foot = L('Gerado pelo app Brotto em '+pdfDate()+' a partir da atividade real das contas (dados Treezor). Método 5D: Dia-a-dia · Aprender · Sonhar · Guardar · Ser livre. Informativo — não constitui aconselhamento financeiro.',
+    'Von der Brotto-App am '+pdfDate()+' aus der echten Kontoaktivität erstellt (Treezor-Daten). 5D-Methode: Alltag · Lernen · Träumen · Bewahren · Frei sein. Informativ — keine Finanzberatung.');
+  return pdfShell({
+    file: 'Brotto_'+(wk?L('Relatorio_Semanal','Wochenbericht'):L('Relatorio_Mensal','Monatsbericht')),
+    right: '<b>'+(wk?L('Relatório semanal','Wochenbericht'):L('Relatório mensal','Monatsbericht'))+'</b><br>'+pdfDate()
+      + '<br>'+L('Família','Familie')+' · '+family.children.length+' '+(family.children.length===1?L('filho','Kind'):L('filhos','Kinder')),
+    body: body, foot: foot });
+}
+function openFamReportPdf(){ printDoc(famDocHtml(famRepPeriod)); }
+
 // ===== RELATÓRIO DA FAMÍLIA (por filho) — semanal + mensal, com dicas do livro por resultado =====
 // Em produção: alimentado por eventos Treezor (webhooks) + base própria; job agendado envia por e-mail/push.
 function childReportTips(c){
@@ -6058,7 +6442,7 @@ function openFamilyReport(period){
       + '<div class="s-sub" style="line-height:1.5">'+tips[0]+'</div></div>';
     html += '</div>';
   });
-  html += '<button class="btn secondary small no-print" style="width:100%;margin-top:10px" onclick="window.print()">📄 '+L('Baixar em PDF','Als PDF herunterladen')+'</button>';
+  html += '<button class="btn secondary small no-print" style="width:100%;margin-top:10px" onclick="openFamReportPdf()">📄 '+L('Baixar em PDF','Als PDF herunterladen')+'</button>';
   html += '<div class="note no-print" style="margin-top:8px">'+L('Em produção este relatório é enviado sozinho aos pais — toda semana e um consolidado no fim do mês (e-mail/push).','In Produktion wird dieser Bericht automatisch an die Eltern gesendet — wöchentlich und als Monatsabschluss (E-Mail/Push).')+'</div>';
   showSheet(html);
 }
@@ -6365,13 +6749,13 @@ function renderBadges(){
 }
 function actRowHtml(e){
   return '<div class="statusrow"><span style="font-size:18px;flex:none">'+e.icon+'</span>'
-    + '<div class="s-sub" style="font-size:12px;line-height:1.5;color:var(--ink-2)">'+e.text
-    + (e.unread?' <span class="tag pend" style="margin-left:4px">novo</span>':'')+'</div></div>';
+    + '<div class="s-sub" style="font-size:12px;line-height:1.5;color:var(--ink-2)">'+BI(e.text)
+    + (e.unread?' <span class="tag pend" style="margin-left:4px">'+L('novo','neu')+'</span>':'')+'</div></div>';
 }
 function renderActivityFeed(){
   const el = document.getElementById('activityFeed');
   if(!el) return;
-  if(parentFeed.length===0){ el.innerHTML = '<div class="note" style="margin-top:0">Nenhuma atividade ainda.</div>'; return; }
+  if(parentFeed.length===0){ el.innerHTML = '<div class="note" style="margin-top:0">'+L('Nenhuma atividade ainda.','Noch keine Aktivität.')+'</div>'; return; }
   el.innerHTML = parentFeed.slice(0,5).map(actRowHtml).join('')
     + (parentFeed.length>5
       ? '<button class="actrow" style="margin-top:8px" onclick="openActivitySheet()">'
@@ -6386,13 +6770,13 @@ function openActivitySheet(){
   const chips = ['Todos'].concat(names);
   const list = parentFeed.filter(e=> actFilter==='Todos' || e.who===actFilter || !e.who);
   let html = '<div class="grab"></div>'
-    + '<div class="sh-title">Atividade dos filhos</div>'
-    + '<div class="sh-sub">Tudo o que aconteceu, em ordem — do mais novo ao mais antigo.</div>'
+    + '<div class="sh-title">'+L('Atividade dos filhos','Aktivität der Kinder')+'</div>'
+    + '<div class="sh-sub">'+L('Tudo o que aconteceu, em ordem — do mais novo ao mais antigo.','Alles, was passiert ist, der Reihe nach — vom Neuesten zum Ältesten.')+'</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
     + chips.map(cp=>'<button type="button" class="reasonchip" style="'+(actFilter===cp?'border-color:var(--ink);font-weight:800;':'')
-      + '" onclick="actFilter=\''+cp+'\';openActivitySheet()">'+cp+'</button>').join('')+'</div>'
+      + '" onclick="actFilter=\''+cp+'\';openActivitySheet()">'+(cp==='Todos'?L('Todos','Alle'):cp)+'</button>').join('')+'</div>'
     + (list.length ? list.map(actRowHtml).join('')
-        : '<div class="note">Nada de '+actFilter+' por aqui ainda.</div>');
+        : '<div class="note">'+L('Nada de '+actFilter+' por aqui ainda.','Von '+actFilter+' gibt es hier noch nichts.')+'</div>');
   showSheet(html);
 }
 // O resgate real na Treezor são DOIS eventos: transferência instantânea
@@ -6602,7 +6986,8 @@ function checkAutoRedeem(){
     .forEach(w=>{
       w.status='done';
       executeRedeem(w.pillar, w.name+' (resgate automático)', w.price, w.icon, w);
-      informParent('✨', 'Meta atingida: <b>"'+w.name+'"</b> ('+fmt0(w.price)+') foi resgatada automaticamente, como combinado.');
+      informParent('✨', L('Meta atingida: <b>"'+w.name+'"</b> ('+fmt0(w.price)+') foi resgatada automaticamente, como combinado.',
+        'Ziel erreicht: <b>"'+TRD(w.name)+'"</b> ('+fmt0(w.price)+') wurde automatisch ausgezahlt, wie vereinbart.'));
       toast('🎉 '+w.icon+L(' Objetivo alcançado! "'+w.name+'" foi resgatado sozinho para o cartão!',' Ziel erreicht! "'+w.name+'" wurde von allein auf die Karte eingelöst!'));
     });
 }
@@ -6858,8 +7243,8 @@ function onbDream(){
     tasks:[], txs:[], requests:[], budgets:[], catOverrides:{}, wishlist:[], biz:[], pastMonths:[],
     potHistory:{despesa:[],desenv:[],desejo:[],defesa:[],dign:[]},
   });
-  parentFeed.unshift({icon:'👤', text:'KYC de <b>'+ONB.name+'</b> VALIDATED · wallets e cartão virtual emitidos.', unread:false});
-  parentFeed.unshift({icon:'🌟', text:'Primeiro sonho de <b>'+ONB.name+'</b>: "'+dn+'" ('+fmt0(dp)+') — o ritual de fundação aconteceu.', unread:false});
+  parentFeed.unshift({icon:'👤', text:L('KYC de <b>'+ONB.name+'</b> VALIDATED · wallets e cartão virtual emitidos.','KYC von <b>'+ONB.name+'</b> VALIDATED · Wallets und virtuelle Karte ausgestellt.'), unread:false});
+  parentFeed.unshift({icon:'🌟', text:L('Primeiro sonho de <b>'+ONB.name+'</b>: "'+dn+'" ('+fmt0(dp)+') — o ritual de fundação aconteceu.','Erster Traum von <b>'+ONB.name+'</b>: "'+dn+'" ('+fmt0(dp)+') — das Gründungsritual hat stattgefunden.'), unread:false});
   selectChild(family.children.length-1);
   // tela final: a primeira sexta-feira
   document.getElementById('onbBox').innerHTML = onbDots(9)
@@ -8255,6 +8640,9 @@ const I18N = {
   "foi resgatada automaticamente, como combinado.":"wurde automatisch ausgezahlt, wie vereinbart.",
   "🔐 Dispositivo registrado como":"🔐 Gerät registriert als",
   "Qual o nome?":"Wie lautet der Name?",
+  "Lanche":"Snack",
+  "Jogo online":"Online-Spiel",
+  "Croissant em Paris":"Croissant in Paris",
   "— o ritual de fundação aconteceu.":"— das Gründungsritual hat stattgefunden.",
   "existe! Agora sim.":"existiert! Jetzt wirklich.",
 };
@@ -8297,6 +8685,16 @@ function setLang(l){
   if(pt) pt.classList.toggle('active', l==='pt');
   if(de) de.classList.toggle('active', l==='de');
   try{ render(); }catch(e){}
+  // Folhas (sheets) guardam o texto já resolvido no idioma de quando foram abertas.
+  // O quiz sabe se redesenhar; qualquer outra folha aberta é fechada para não
+  // sobrar uma tela meio PT meio DE.
+  try{
+    const sh=document.getElementById('sheet');
+    if(sh && sh.classList.contains('on')){
+      if(FOXQ && FOXQVIEW) foxQuizRelang();
+      else closeSheet();
+    }
+  }catch(e){}
   _i18nAll();  // pega o que é estático e o que acabou de re-renderizar
   try{ if(curMode==='child' && isKid()) kGreet(); }catch(e){}   // refresca a fala da raposa no idioma novo
 }
@@ -8324,9 +8722,9 @@ state.txs.push(
 state = family.children[0];
 // o feed do responsável nunca nasce vazio — transparência desde o primeiro segundo
 parentFeed.push(
-  {icon:'🍦', text:'Ludo comprou em <b>Eiscafé Rimini</b> (−€2) — dentro do combinado.', unread:false, who:'Ludo'},
-  {icon:'🎬', text:'Alice foi ao <b>CineStar</b> (−€8,50) no dia 12.', unread:false, who:'Alice'},
-  {icon:'⭐', text:'Ludo completou <b>"Arrumar a cama"</b> 4 dias seguidos. 🔥', unread:false, who:'Ludo'});
+  {icon:'🍦', text:L('Ludo comprou em <b>Eiscafé Rimini</b> (−€2) — dentro do combinado.','Ludo hat bei <b>Eiscafé Rimini</b> gekauft (−€2) — innerhalb der Vereinbarung.'), unread:false, who:'Ludo'},
+  {icon:'🎬', text:L('Alice foi ao <b>CineStar</b> (−€8,50) no dia 12.','Alice war am 12. im <b>CineStar</b> (−€8,50).'), unread:false, who:'Alice'},
+  {icon:'⭐', text:L('Ludo completou <b>"Arrumar a cama"</b> 4 dias seguidos. 🔥','Ludo hat <b>"Bett machen"</b> 4 Tage in Folge geschafft. 🔥'), unread:false, who:'Ludo'});
 selectChild(0);
 _i18nStart();
 // O quiz da raposinha aparece sozinho ao abrir o app (1x por dia). A criança responde ou fecha.
