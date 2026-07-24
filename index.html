@@ -56,6 +56,15 @@
     display:flex; justify-content:center; min-height:100vh; padding:20px 10px 56px;
   }
   .phone{width:100%;max-width:430px;position:relative;z-index:1;}
+  /* --- Tablet em retrato: escala tudo pra criança usar melhor a tela grande --- */
+  @media (min-width:640px) and (orientation:portrait){
+    body{ zoom:1.3; }
+    .phone{ max-width:480px; }
+  }
+  @media (min-width:1000px) and (orientation:portrait){
+    body{ zoom:1.6; }
+    .phone{ max-width:500px; }
+  }
   .watermark{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);
     width:min(135vw,560px);color:var(--ink);opacity:.05;z-index:0;pointer-events:none;}
   .watermark svg{width:100%;height:auto;display:block}
@@ -536,6 +545,30 @@
     <path d="M67 59 Q72 55 76 59 Q72 62 67 59 Z" fill="#171614" stroke="none"/>
     <path d="M60 90 L55.5 82 L64.5 82 Z" fill="#171614" stroke="none"/>
   </g>
+  <!-- raposa-mascote p/ fundo claro (companheira): contorno escuro -->
+  <g id="foxHero" stroke="#171614" stroke-width="2.4" stroke-linejoin="round">
+    <path d="M34 12 L52 34 L30 42 Z" fill="#8f8d87"/>
+    <path d="M30 42 L60 36 L60 104 L38 80 L28 58 Z" fill="#E7E5E0"/>
+    <path d="M90 42 L60 36 L60 104 L82 80 L92 58 Z" fill="#A9A7A1"/>
+    <path d="M60 104 L50 72 L60 76 L70 72 Z" fill="#FFFFFF"/>
+    <path d="M80 36 L98 8 L97 22 L88 40 Z" fill="#3E9E57"/>
+    <path d="M92 14 L84 34" stroke="#1d5730" stroke-width="1.6"/>
+    <path d="M44 58 L49 55 L54 58 L49 62 Z" fill="#FFFFFF"/>
+    <path d="M67 59 Q72 55 76 59 Q72 62 67 59 Z" fill="#171614" stroke="none"/>
+    <path d="M60 90 L55.5 82 L64.5 82 Z" fill="#171614" stroke="none"/>
+  </g>
+  <!-- raposa "soneca": olhos fechados (traço) p/ estado com fome -->
+  <g id="foxSleep" stroke="#171614" stroke-width="2.4" stroke-linejoin="round">
+    <path d="M34 12 L52 34 L30 42 Z" fill="#8f8d87"/>
+    <path d="M30 42 L60 36 L60 104 L38 80 L28 58 Z" fill="#E7E5E0"/>
+    <path d="M90 42 L60 36 L60 104 L82 80 L92 58 Z" fill="#A9A7A1"/>
+    <path d="M60 104 L50 72 L60 76 L70 72 Z" fill="#FFFFFF"/>
+    <path d="M80 36 L98 8 L97 22 L88 40 Z" fill="#3E9E57"/>
+    <path d="M92 14 L84 34" stroke="#1d5730" stroke-width="1.6"/>
+    <path d="M45 58 L53 58" stroke="#171614" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M67 59 L75 59" stroke="#171614" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M60 90 L55.5 82 L64.5 82 Z" fill="#171614" stroke="none"/>
+  </g>
   <!-- silhueta única p/ marca d'água -->
   <g id="foxWM" fill="currentColor">
     <path d="M34 12 L52 34 L30 42 Z"/>
@@ -545,6 +578,24 @@
     <path d="M60 104 L50 72 L60 76 L70 72 Z"/>
   </g>
 </defs></svg>
+
+<style>
+  /* animações da raposa-mascote (corpo inteiro) */
+  @keyframes fxBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes fxTail{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(13deg)}}
+  @keyframes fxBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.12)}}
+  @keyframes fxBreath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.05)}}
+  @keyframes fxZ{0%{opacity:0;transform:translate(0,4px) scale(.7)}30%{opacity:1}100%{opacity:0;transform:translate(9px,-16px) scale(1.15)}}
+  .fx-bob{animation:fxBob 2.6s ease-in-out infinite;transform-box:view-box;transform-origin:60px 118px}
+  .fx-tail{animation:fxTail 1.9s ease-in-out infinite;transform-box:view-box;transform-origin:88px 80px}
+  .fx-eye{animation:fxBlink 4.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .fx-breath{animation:fxBreath 3.6s ease-in-out infinite;transform-box:view-box;transform-origin:65px 82px}
+  .fx-z text{animation:fxZ 2.9s ease-in-out infinite}
+  @keyframes fxSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3.5deg)}}
+  .fx-sway{animation:fxSway 3.4s ease-in-out infinite;transform-box:view-box;transform-origin:50px 148px}
+  .fx-sway-tree{animation:fxSway 4.4s ease-in-out infinite;transform-box:view-box;transform-origin:54px 120px}
+  @media(prefers-reduced-motion:reduce){.fx-bob,.fx-tail,.fx-eye,.fx-breath,.fx-z text,.fx-sway,.fx-sway-tree{animation:none}}
+</style>
 
 <!-- marca d'água: raposa sutil atrás de todo o app -->
 <div class="watermark" aria-hidden="true"><svg viewBox="0 0 120 120"><use href="#foxWM"/></svg></div>
@@ -626,30 +677,11 @@
         <div class="kamount" id="kTotal">€ 0</div>
         <div class="jars" id="kJars"></div>
       </div>
+      <div id="kFox" style="margin-top:8px"></div>
+      <div id="kDreamTeaser" style="margin-top:8px"></div>
       <div id="kHomeGrowth"></div>
       <div id="kClassify" style="margin-top:8px"></div>
       <div id="kBizHome" style="margin-top:8px"></div>
-      <div class="kcard" style="margin-top:8px">
-        <div class="klabel" style="text-align:left;margin-bottom:8px">meu cartão 💳</div>
-        <div class="vcard" id="kVcard" style="margin-bottom:10px;cursor:pointer" onclick="openCardSheet()">
-          <div class="vc-top"><span style="display:inline-flex;align-items:center;gap:5px"><svg class="cfox" viewBox="0 0 120 120"><use href="#cardFoxD"/></svg>brotto</span><span id="kFrozen">VIRTUAL</span></div>
-          <div>
-            <div style="font-size:12px;opacity:.85">dá pra gastar agora</div>
-            <div id="kCardBal" style="font-size:32px;font-weight:800;line-height:1.1">€0</div>
-          </div>
-          <div class="vc-bottom">
-            <span id="kCardName">LUDO S.</span>
-            <span style="display:flex;align-items:center;gap:8px">
-              <span class="vc-num" id="kCardNum" style="font-size:12px;letter-spacing:2px;opacity:.75">•••• 5D21</span>
-              <span class="mc"><i></i><i></i></span>
-            </span>
-          </div>
-        </div>
-        <div class="note" id="kCardRules" style="text-align:center;font-size:14px;margin:2px 0 10px"></div>
-        <div id="kPhysCard"></div>
-        <div id="kLostBox"></div>
-      </div>
-      <div id="kDreamTeaser" style="margin-top:6px"></div>
       <span id="kNextAmt" class="hidden"></span><span id="kNextDay" class="hidden"></span>
     </div>
 
@@ -677,6 +709,26 @@
       <div id="kGrowth"></div>
       <div style="height:12px"></div>
       <button class="actrow" onclick="openGiftSheet()"><span class="ar-e">🏦</span><span class="ar-t">Minha conta</span><span class="ar-c">›</span></button>
+      <div class="kcard" style="margin-top:14px">
+        <div class="klabel" style="text-align:left;margin-bottom:8px">meu cartão 💳</div>
+        <div class="vcard" id="kVcard" style="margin-bottom:10px;cursor:pointer" onclick="openCardSheet()">
+          <div class="vc-top"><span style="display:inline-flex;align-items:center;gap:5px"><svg class="cfox" viewBox="0 0 120 120"><use href="#cardFoxD"/></svg>brotto</span><span id="kFrozen">VIRTUAL</span></div>
+          <div>
+            <div style="font-size:12px;opacity:.85">dá pra gastar agora</div>
+            <div id="kCardBal" style="font-size:32px;font-weight:800;line-height:1.1">€0</div>
+          </div>
+          <div class="vc-bottom">
+            <span id="kCardName">LUDO S.</span>
+            <span style="display:flex;align-items:center;gap:8px">
+              <span class="vc-num" id="kCardNum" style="font-size:12px;letter-spacing:2px;opacity:.75">•••• 5D21</span>
+              <span class="mc"><i></i><i></i></span>
+            </span>
+          </div>
+        </div>
+        <div class="note" id="kCardRules" style="text-align:center;font-size:14px;margin:2px 0 10px"></div>
+        <div id="kPhysCard"></div>
+        <div id="kLostBox"></div>
+      </div>
     </div>
 
     <!-- aba: meu negócio — a mini-empresa da criança (criar + conciliar + ver lucro real) -->
@@ -1084,6 +1136,8 @@ const LUDO = {
   alloc:{despesa:35, desenv:15, desejo:25, defesa:15, dign:10},
   allowance:{amount:20, freq:'semanal'},
   phase:1,
+  // Raposinha-companheira: energia=conhecimento (quiz diário) · crescimento=poupança sustentada
+  fox:{ name:'Fex', energy:28, stage:1, growth:60, streak:2, mastery:0, lastQuizISO:'', wisdom:[1] },
   // Cada sonho/aprendizado ("casinha") tem saldo e extrato PRÓPRIOS:
   // w.saved = quanto já mora nela · w.history = depósitos e resgates dela
   wishes:[
@@ -2076,8 +2130,8 @@ function render(){
 
   // contas reais (visão teen) — toque abre os dados completos (IBAN/BIC)
   document.getElementById('acctChips').innerHTML =
-    '<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'card\')"><div class="t-k">Wallet Cartão</div><div class="t-v">'+fmt0(state.balances.despesa)+'</div><div class="t-s">DE89 ···· 5D21 · ver IBAN</div></div>'
-    +'<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'cofre\')"><div class="t-k">Wallet Cofre</div><div class="t-v">'+fmt0(cofre)+'</div><div class="t-s">DE89 ···· 7C03 · ver IBAN</div></div>';
+    '<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'card\')"><div class="t-k">'+L('Saldo disponível','Verfügbares Guthaben')+'</div><div class="t-v">'+fmt0(state.balances.despesa)+'</div><div class="t-s">DE89 ···· 5D21 · ver IBAN</div></div>'
+    +'<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'cofre\')"><div class="t-k">'+L('Saldo poupado','Gespartes Guthaben')+'</div><div class="t-v">'+fmt0(cofre)+'</div><div class="t-s">DE89 ···· 7C03 · ver IBAN</div></div>';
 
   const pmf=document.getElementById('pMoneyFlow'); if(pmf) pmf.innerHTML = moneyFlowCardHtml(false);
   renderAlloc();
@@ -2186,7 +2240,7 @@ function render(){
   const tmf=document.getElementById('tMoneyFlow'); if(tmf) tmf.innerHTML = moneyFlowCardHtml(false);
   const kgr=document.getElementById('kGrowth'); if(kgr) kgr.innerHTML = growthHtml(true);
   const tgr=document.getElementById('tGrowth'); if(tgr) tgr.innerHTML = growthHtml(false);
-  const khg=document.getElementById('kHomeGrowth'); if(khg) khg.innerHTML = homeGrowthHtml(true);
+  const khg=document.getElementById('kHomeGrowth'); if(khg) khg.innerHTML = '';  // a plantinha do dinheiro agora vive na cena da raposa (juros)
   const thg=document.getElementById('tHomeGrowth'); if(thg) thg.innerHTML = homeGrowthHtml(false);
   if(kMoneyM>curM()) kMoneyM = curM();
   const kms=document.getElementById('kMoneyStmt'); if(kms) renderStatement('kMoneyStmt', kMoneyM, {kid:true, nav:'kMoneyNav'});
@@ -2648,8 +2702,322 @@ function confetti(n){
     setTimeout(()=>s.remove(), 3500);
   }
 }
+// ===================== RAPOSINHA (companheiro de conhecimento) =====================
+// Energia = conhecimento (quiz diário, com "fome" justa). Crescimento = poupança sustentada (taxa, só positivo).
+const FOX_STAGES = [
+  {pt:'filhote', de:'Welpe',     scale:0.80},
+  {pt:'jovem',   de:'Jung',      scale:0.94},
+  {pt:'adulta',  de:'Erwachsen', scale:1.08},
+  {pt:'sábia',   de:'Weise',     scale:1.20},
+];
+function foxStageName(i){ const s=FOX_STAGES[Math.max(0,Math.min(3,i))]; return L(s.pt, s.de); }
+function ensureFox(c){ c=c||state; if(!c.fox) c.fox={name:'Fex',energy:60,stage:1,growth:40,streak:0,mastery:0,lastQuizISO:'',wisdom:[]}; if(!c.fox.wisdom) c.fox.wisdom=[]; return c.fox; }
+function foxSavingsRate(c){ c=c||state; const b=c.balances; const tot=b.despesa+b.desenv+b.desejo+b.defesa+b.dign; return tot>0 ? (b.desejo+b.defesa+b.dign)/tot : 0; }
+function foxTodayISO(){ try{ return new Date().toISOString().slice(0,10); }catch(e){ return 'x'; } }
+// raposa-mascote da marca (SVG cubista de CORPO INTEIRO, animada).
+//   acordada: senta, balança (respira), rabo abana, pisca · sábia: brilho + ✦
+//   com fome: deitadinha dormindo (olhos fechados), respira devagar, com zZz
+const _D='#171614', _L='#E7E5E0', _M='#A9A7A1', _G='#3E9E57';
+// corpo por estágio (mesmo personagem, silhuetas diferentes)
+function foxYoungBody(){ return '<g class="fx-bob">'
+  +'<g class="fx-tail"><path d="M80 100 C112 94 112 56 92 50 C102 64 96 84 74 90 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M92 50 C100 52 102 60 98 66 C94 60 92 55 92 50 Z" fill="#fff" stroke="'+_D+'" stroke-width="2"/></g>'
+  +'<path d="M60 66 C42 66 36 102 44 120 L76 120 C84 102 78 66 60 66 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M60 66 C78 66 84 102 76 120 L60 120 Z" fill="'+_M+'"/><path d="M60 84 L52 120 L68 120 Z" fill="#fff"/>'
+  +'<rect x="46" y="112" width="13" height="12" rx="6" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/><rect x="61" y="112" width="13" height="12" rx="6" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/>'
+  +'<path d="M40 42 L34 18 L54 34 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M80 42 L86 18 L66 34 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M83 22 L92 7 L90 25 Z" fill="'+_G+'" stroke="'+_D+'" stroke-width="1.6"/>'
+  +'<path d="M40 38 L60 31 L80 38 L74 64 L60 72 L46 64 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M60 31 L80 38 L74 64 L60 72 Z" fill="'+_M+'"/><path d="M60 72 L52 58 L68 58 Z" fill="#fff"/>'
+  +'<circle class="fx-eye" cx="51" cy="48" r="2.7" fill="'+_D+'"/><circle class="fx-eye" cx="69" cy="48" r="2.7" fill="'+_D+'"/>'
+  +'<path d="M60 62 L56.5 57 L63.5 57 Z" fill="'+_D+'"/></g>'; }
+function foxBabyBody(){ return '<g class="fx-bob">'
+  +'<g class="fx-tail"><path d="M74 108 C98 104 100 82 84 78 C92 88 88 100 70 102 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M84 78 C90 80 91 86 88 90 C85 85 84 81 84 78 Z" fill="#fff" stroke="'+_D+'" stroke-width="2"/></g>'
+  +'<path d="M60 88 C50 88 46 108 51 120 L69 120 C74 108 70 88 60 88 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M60 88 C70 88 74 108 69 120 L60 120 Z" fill="'+_M+'"/><path d="M60 98 L55 120 L65 120 Z" fill="#fff"/>'
+  +'<rect x="50" y="113" width="10" height="11" rx="5" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/><rect x="60" y="113" width="10" height="11" rx="5" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/>'
+  +'<path d="M42 50 L38 30 L54 44 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M78 50 L82 30 L66 44 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M80 34 L86 23 L84 36 Z" fill="'+_G+'" stroke="'+_D+'" stroke-width="1.6"/>'
+  +'<path d="M34 50 L60 40 L86 50 L80 76 L60 90 L40 76 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M60 40 L86 50 L80 76 L60 90 Z" fill="'+_M+'"/><path d="M60 90 L50 72 L70 72 Z" fill="#fff"/>'
+  +'<circle class="fx-eye" cx="49" cy="60" r="4.2" fill="'+_D+'"/><circle class="fx-eye" cx="71" cy="60" r="4.2" fill="'+_D+'"/>'
+  +'<path d="M60 76 L56 70 L64 70 Z" fill="'+_D+'"/></g>'; }
+function foxAdultBody(extra){ return '<g class="fx-bob">'
+  +'<g class="fx-tail"><path d="M78 104 C120 94 122 46 88 42 C104 62 98 90 70 96 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M88 42 C97 44 100 54 95 62 C90 54 88 47 88 42 Z" fill="#fff" stroke="'+_D+'" stroke-width="2"/></g>'
+  +'<path d="M60 56 C45 56 41 104 47 120 L73 120 C79 104 75 56 60 56 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M60 56 C75 56 79 104 73 120 L60 120 Z" fill="'+_M+'"/><path d="M60 76 L53 120 L67 120 Z" fill="#fff"/>'
+  +'<rect x="47" y="112" width="13" height="12" rx="6" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/><rect x="60" y="112" width="13" height="12" rx="6" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.2"/>'
+  +'<path d="M40 36 L30 6 L56 30 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M80 36 L90 6 L64 30 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'
+  +'<path d="M86 14 L96 1 L93 19 Z" fill="'+_G+'" stroke="'+_D+'" stroke-width="1.6"/>'
+  +'<path d="M42 34 L60 26 L78 34 L72 64 L60 74 L48 64 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M60 26 L78 34 L72 64 L60 74 Z" fill="'+_M+'"/><path d="M60 74 L53 58 L67 58 Z" fill="#fff"/>'
+  +'<circle class="fx-eye" cx="52" cy="46" r="2.6" fill="'+_D+'"/><circle class="fx-eye" cx="68" cy="46" r="2.6" fill="'+_D+'"/>'
+  +'<path d="M60 62 L56.5 57 L63.5 57 Z" fill="'+_D+'"/>'
+  +(extra||'')+'</g>'; }
+function foxWiseBody(){ return foxAdultBody(
+   '<circle cx="52" cy="46" r="6.6" fill="none" stroke="'+_D+'" stroke-width="1.8"/>'
+  +'<circle cx="68" cy="46" r="6.6" fill="none" stroke="'+_D+'" stroke-width="1.8"/>'
+  +'<path d="M58.6 46 L61.4 46" stroke="'+_D+'" stroke-width="1.8"/>'
+  +'<path d="M45 40 L51.5 38" stroke="'+_D+'" stroke-width="1.9" stroke-linecap="round"/><path d="M75 40 L68.5 38" stroke="'+_D+'" stroke-width="1.9" stroke-linecap="round"/>'
+  +'<path d="M60 74 L56 84 L64 84 Z" fill="#fff" stroke="'+_D+'" stroke-width="1.6"/>'); }
+function foxBodyByStage(st){ return st===0?foxBabyBody(): st===2?foxAdultBody(): st===3?foxWiseBody(): foxYoungBody(); }
+// ---- plantinha do dinheiro (cresce com os JUROS, ao lado da raposa) ----
+function foxTotalJuros(c){ c=c||state; let s=0; const ks=['despesa','desenv','desejo','defesa','dign'];
+  ks.forEach(k=>{ ((c.potHistory&&c.potHistory[k])||[]).forEach(e=>{ if(/juros da fam/i.test(e.name)) s+=e.amt; }); });
+  (c.wishes||[]).forEach(w=>(w.history||[]).forEach(e=>{ if(/juros da fam/i.test(e.name)) s+=e.amt; }));
+  return s; }
+function foxPlantStage(c){ const j=foxTotalJuros(c); return j<0.5?0: j<2.5?1: j<5?2: j<10?3: 4; }
+function foxPlantName(stg){ return L(['broto','mudinha','arbusto','arvorezinha','árvore'][stg], ['Keimling','Setzling','Busch','Bäumchen','Baum'][stg]); }
+function plantSvg(stg){
+  const G='#3E9E57', Gl='#6fce8f', Gd='#1d5730', Br='#8a6a4a', Brd='#5c4630';
+  let inner;
+  if(stg<=0){
+    inner='<path d="M50 148 L50 130" stroke="'+G+'" stroke-width="3.4" stroke-linecap="round"/>'
+      +'<g class="fx-sway"><path d="M50 134 L38 124 L50 129 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="1.4"/>'
+      +'<path d="M50 134 L62 124 L50 129 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.4"/></g>';
+  } else if(stg===1){
+    inner='<path d="M50 148 L50 106" stroke="'+G+'" stroke-width="3.4" stroke-linecap="round"/>'
+      +'<g class="fx-sway"><path d="M50 120 L33 108 L50 114 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="1.4"/>'
+      +'<path d="M50 120 L67 108 L50 114 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.4"/>'
+      +'<path d="M50 108 L36 98 L50 104 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="1.4"/>'
+      +'<path d="M50 106 L50 92 L62 100 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.4"/></g>';
+  } else if(stg===2){
+    inner='<path d="M50 148 L50 94" stroke="'+Br+'" stroke-width="4.4" stroke-linecap="round"/>'
+      +'<g class="fx-sway"><path d="M50 56 L26 98 L74 98 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.6"/>'
+      +'<path d="M50 72 L32 100 L68 100 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="1.6"/></g>';
+  } else if(stg===3){
+    inner='<path d="M45 148 L47 84 L53 84 L55 148 Z" fill="'+Br+'" stroke="'+Brd+'" stroke-width="1.6"/>'
+      +'<g class="fx-sway"><path d="M50 30 L18 90 L82 90 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.8"/>'
+      +'<path d="M50 50 L26 94 L74 94 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="1.8"/></g>';
+  } else {
+    inner='<path d="M42 148 L46 72 L54 72 L58 148 Z" fill="'+Br+'" stroke="'+Brd+'" stroke-width="1.8"/>'
+      +'<g class="fx-sway"><path d="M54 6 L4 82 L100 82 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="2"/>'
+      +'<path d="M54 30 L14 88 L96 88 Z" fill="'+Gl+'" stroke="'+Gd+'" stroke-width="2"/>'
+      +'<path d="M54 18 L28 56 L80 56 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="1.6"/></g>';
+  }
+  return '<svg viewBox="0 0 100 152" style="width:100%;height:auto;display:block;overflow:visible">'+inner+'</svg>';
+}
+// árvore frondosa que cobre a raposa (sombra) — poupança protegendo o conhecimento
+function bigTreeSvg(stg){
+  const G='#3E9E57', Gl='#6fce8f', Gd='#1d5730', Gk='#2f8050', Br='#8a6a4a', Brd='#5c4630';
+  const s = stg>=4 ? 1 : 0.9;   // stg3 um pouco menor que a árvore cheia
+  return '<svg viewBox="0 0 200 152" preserveAspectRatio="xMidYMax meet" style="width:100%;height:100%;display:block;overflow:visible">'
+    +'<ellipse cx="104" cy="146" rx="70" ry="8" fill="#000" opacity=".07"/>'   // sombra no chão
+    +'<path d="M46 150 L52 84 L60 84 L66 150 Z" fill="'+Br+'" stroke="'+Brd+'" stroke-width="2.2"/>'   // tronco
+    +'<g class="fx-sway-tree" style="transform:scale('+s+');transform-origin:104px 120px">'
+    +  '<path d="M104 8 C58 8 22 36 30 66 C14 78 22 104 48 104 L162 104 C190 104 198 76 180 62 C188 34 150 8 104 8 Z" fill="'+G+'" stroke="'+Gd+'" stroke-width="2.6"/>'
+    +  '<ellipse cx="74" cy="52" rx="32" ry="26" fill="'+Gl+'"/>'
+    +  '<ellipse cx="132" cy="46" rx="36" ry="28" fill="'+Gl+'"/>'
+    +  '<ellipse cx="106" cy="74" rx="44" ry="26" fill="'+G+'"/>'
+    +  '<ellipse cx="152" cy="78" rx="22" ry="15" fill="'+Gk+'"/>'
+    +  '<ellipse cx="58" cy="80" rx="20" ry="13" fill="'+Gk+'"/>'
+    +  '<ellipse cx="100" cy="40" rx="16" ry="12" fill="#8fe0ab"/>'
+    +'</g>'
+    +'</svg>';
+}
+// medidor vertical (termômetro) pra criança: ícone em cima, enche de baixo pra cima, palavra embaixo
+function foxMeter(pct, color, icon, label){
+  pct=Math.max(0,Math.min(100,Math.round(pct)));
+  return '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:42px;flex:none">'
+    +'<div style="font-size:18px;line-height:1">'+icon+'</div>'
+    +'<div style="position:relative;width:16px;height:92px;background:#ecebe6;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)">'
+    +  '<div style="position:absolute;left:0;right:0;bottom:0;height:'+pct+'%;background:'+color+';border-radius:9px;transition:height .6s ease"></div>'
+    +'</div>'
+    +'<div style="font-size:10.5px;color:var(--muted);font-weight:800;text-align:center;line-height:1.05">'+label+'</div>'
+    +'</div>';
+}
+function foxSvg(px, opts){
+  opts=opts||{}; const hungry=!!opts.hungry, glow=!!opts.glow; const st=Math.max(0,Math.min(3, opts.stage==null?1:opts.stage));
+  if(hungry){
+    return '<div style="display:inline-block;width:'+px+'px;vertical-align:middle">'
+     +'<svg viewBox="0 0 132 96" style="width:100%;height:auto;display:block;overflow:visible">'
+     +'<ellipse cx="66" cy="88" rx="46" ry="6" fill="#000" opacity=".06"/>'         // sombra no chão
+     +'<g class="fx-breath">'
+       +'<path d="M92 70 C120 64 120 36 96 42 C110 50 104 66 82 70 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'  // rabo enrolado
+       +'<path d="M96 42 C105 44 107 54 102 60 C97 53 96 47 96 42 Z" fill="#fff" stroke="'+_D+'" stroke-width="2"/>'                                  // ponta branca
+       +'<path d="M26 74 C26 54 106 54 110 74 C112 88 22 90 26 74 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'      // corpo deitado
+       +'<path d="M70 58 C94 58 110 64 110 74 C112 88 66 88 66 88 Z" fill="'+_M+'"/>'                                                                  // sombra do corpo
+       +'<path d="M16 64 L36 53 L47 68 L36 83 L18 80 Z" fill="'+_L+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'                    // cabeça descansada
+       +'<path d="M30 53 L25 35 L45 50 Z" fill="'+_M+'" stroke="'+_D+'" stroke-width="2.4" stroke-linejoin="round"/>'                                  // orelha
+       +'<path d="M29 41 L22 27 L35 34 Z" fill="'+_G+'" stroke="'+_D+'" stroke-width="1.6"/>'                                                          // folha verde
+       +'<path d="M23 68 L34 68" stroke="'+_D+'" stroke-width="2.6" stroke-linecap="round"/>'                                                          // olho fechado
+       +'<circle cx="16" cy="71" r="2.2" fill="'+_D+'"/>'                                                                                              // focinho
+     +'</g>'
+     +'<g class="fx-z" style="font-family:system-ui;font-weight:800;fill:#b8b2a7"><text x="72" y="34" style="font-size:16px">z</text><text x="84" y="22" style="font-size:12px;animation-delay:.9s">z</text></g>'
+     +'</svg></div>';
+  }
+  return '<div style="display:inline-block;width:'+px+'px;vertical-align:middle;'+(glow?'filter:drop-shadow(0 0 9px rgba(230,177,60,.6))':'')+'">'
+   +'<svg viewBox="0 0 120 128" style="width:100%;height:auto;display:block;overflow:visible">'
+   +'<ellipse cx="60" cy="120" rx="34" ry="5" fill="#000" opacity=".06"/>'
+   +foxBodyByStage(st)
+   +(glow?'<g class="fx-z" style="font-family:system-ui;font-weight:700;fill:#e6b13c"><text x="94" y="30" style="font-size:16px">✦</text></g>':'')
+   +'</svg></div>';
+}
+
+const WISDOM = [
+  {id:1, t:['Guardar primeiro','Zuerst sparen'], b:['Separe um pouquinho assim que o dinheiro chega — antes de gastar. É o segredo de quem junta.','Leg etwas beiseite, sobald das Geld kommt — vor dem Ausgeben. Das Geheimnis der Sparer.']},
+  {id:2, t:['Desejo x necessidade','Wunsch vs. Bedarf'], b:['Antes de comprar, pergunte: eu preciso ou eu quero? Saber a diferença te deixa no controle.','Frag dich vor dem Kauf: brauche oder will ich das? Den Unterschied zu kennen gibt dir die Kontrolle.']},
+  {id:3, t:['Juros que trabalham','Zinsen, die arbeiten'], b:['O dinheiro guardado pode render sozinho. Quanto mais cedo você guarda, mais ele trabalha por você.','Gespartes Geld wächst von allein. Je früher du sparst, desto mehr arbeitet es für dich.']},
+  {id:4, t:['A dignidade é intocável','Würde ist unantastbar'], b:['Um cantinho do seu dinheiro é só seu, pra sempre. Ele te dá a liberdade de dizer "não".','Eine Ecke deines Geldes gehört für immer nur dir. Sie gibt dir die Freiheit, "nein" zu sagen.']},
+  {id:5, t:['Paciência compensa','Geduld lohnt sich'], b:['Esperar pra comprar quase sempre traz uma escolha melhor — às vezes você nem quer mais.','Mit dem Kauf zu warten bringt fast immer die bessere Wahl — manchmal willst du es gar nicht mehr.']},
+  {id:6, t:['Todo sonho tem um plano','Jeder Traum hat einen Plan'], b:['Um sonho vira realidade quando ganha um preço e um pouquinho por semana.','Ein Traum wird wahr, wenn er einen Preis bekommt und ein bisschen pro Woche.']},
+];
+
+function foxQuizToday(){
+  const c=state;
+  const bank=[
+    {q:['O que é melhor fazer assim que a mesada chega?','Was machst du am besten, sobald das Taschengeld kommt?'],
+     o:[['Gastar tudo rapidinho','Alles schnell ausgeben'],['Guardar um pouquinho primeiro','Zuerst ein bisschen sparen'],['Esconder embaixo da cama','Unters Bett verstecken']],c:1,
+     tip:['Guardar primeiro é o segredo de quem junta! 🌱','Zuerst sparen ist das Geheimnis! 🌱']},
+    {q:['Um videogame que você quer muito é...','Ein Videospiel, das du sehr willst, ist...'],
+     o:[['Uma necessidade','Ein Bedarf'],['Um desejo','Ein Wunsch'],['Um imposto','Eine Steuer']],c:1,
+     tip:['É um desejo — dá pra realizar, com um plano! 🎯','Das ist ein Wunsch — erfüllbar, mit einem Plan! 🎯']},
+    {q:['Por que guardar dinheiro cedo é tão bom?','Warum ist früh sparen so gut?'],
+     o:[['Porque rende sozinho com o tempo','Weil es mit der Zeit von allein wächst'],['Porque some','Weil es verschwindet'],['Não tem vantagem','Kein Vorteil']],c:0,
+     tip:['Os juros trabalham por você — quanto antes, melhor! ⏳','Zinsen arbeiten für dich — je früher, desto besser! ⏳']},
+    {q:['O cofrinho da Dignidade serve pra...','Das Würde-Sparschwein ist für...'],
+     o:[['Gastar no fim de semana','Am Wochenende ausgeben'],['Ficar guardado pra sempre, só seu','Für immer sparen, nur für dich'],['Emprestar pros amigos','Freunden leihen']],c:1,
+     tip:['A Dignidade é intocável — te dá liberdade de dizer não. 🕊️','Die Würde ist unantastbar — Freiheit, nein zu sagen. 🕊️']},
+    {q:['O que é uma "necessidade"?','Was ist ein "Bedarf"?'],
+     o:[['Algo que você precisa mesmo, tipo comida','Etwas, das du wirklich brauchst, z.B. Essen'],['O brinquedo mais caro da loja','Das teuerste Spielzeug'],['Um doce extra','Ein extra Bonbon']],c:0,
+     tip:['Necessidade é o essencial; desejo é o extra. Os dois têm lugar! 💡','Bedarf ist das Nötige; Wunsch ist das Extra. Beides hat Platz! 💡']},
+  ];
+  const day=(function(){try{return new Date().getDate();}catch(e){return 3;}})();
+  const qs=[ bank[day%bank.length], bank[(day+2)%bank.length] ];
+  const bud=(c.budgets||[]).slice().sort((x,y)=>y.spent-x.spent)[0];
+  if(bud && bud.spent>0){
+    qs.push({q:['Semana passada você mais gastou em "'+bud.name+'". Isso costuma ser...','Letzte Woche hast du am meisten für "'+TR(bud.name)+'" ausgegeben. Das ist meistens...'],
+      o:[['Um desejo (dá pra planejar)','Ein Wunsch (planbar)'],['Uma necessidade do dia a dia','Ein täglicher Bedarf'],['Depende — pode ser os dois','Kommt drauf an — beides']],c:2,
+      tip:['Perceber pra onde o dinheiro vai já é metade do caminho! 👀','Zu merken, wohin das Geld geht, ist die halbe Miete! 👀']});
+  } else {
+    const have=Math.max(1,Math.round(c.balances.desejo||3)), price=have+(2+(day%4))*3, wk=Math.max(1,Math.ceil((price-have)/3));
+    qs.push({q:['Você tem €'+have+', o sonho custa €'+price+' e junta €3 por semana. Em quantas semanas dá?','Du hast €'+have+', der Traum kostet €'+price+' und du sparst €3 pro Woche. In wie vielen Wochen?'],
+      o:[[String(Math.max(1,wk-1)),String(Math.max(1,wk-1))],[String(wk),String(wk)],[String(wk+2),String(wk+2)]],c:1,
+      tip:['Planejar o sonho em semanas deixa tudo possível! 🗓️','Den Traum in Wochen planen macht alles möglich! 🗓️']});
+  }
+  return qs.map(x=>({q:L(x.q[0],x.q[1]), o:x.o.map(p=>L(p[0],p[1])), c:x.c, tip:L(x.tip[0],x.tip[1])}));
+}
+
+function renderFox(){
+  const host=document.getElementById('kFox'); if(!host) return;
+  if(!isKid()){ host.innerHTML=''; return; }
+  const f=ensureFox();
+  const hungry=f.energy<35;
+  const fedToday=f.lastQuizISO===foxTodayISO();
+  const stageNm=foxStageName(f.stage);
+  const sc=FOX_STAGES[Math.max(0,Math.min(3,f.stage))].scale;
+  const mast=(f.stage>=3&&f.mastery>0)?(' '+'✦'.repeat(Math.min(5,f.mastery))):'';
+  host.innerHTML=
+    '<div class="kcard" onclick="openFoxWorld()" style="cursor:pointer;text-align:center">'
+    + '<div class="klabel" style="text-align:left;margin-bottom:2px">'+L('minha raposinha','mein Fuchs')+(f.stage>=3?' 🎓':'')+'</div>'
+    + (function(){ const fw=Math.round(78*sc), pstg=foxPlantStage(); const growPct=f.stage>=3?100:Math.round(f.growth); let scene;
+        if(pstg>=3){   // árvore frondosa cobrindo a raposa (a poupança protege o conhecimento)
+          scene='<div style="position:relative;flex:1;display:flex;justify-content:center;align-items:flex-end;min-height:150px">'
+            + '<div style="position:absolute;inset:0;z-index:1">'+bigTreeSvg(pstg)+'</div>'
+            + '<div style="position:relative;z-index:2;width:'+fw+'px;margin-bottom:2px;filter:brightness(.96)">'+foxSvg(fw,{hungry:hungry, glow:f.stage>=3, stage:f.stage})+'</div>'
+            + '</div>';
+        } else {
+          const pw=Math.round(40+pstg*15);
+          scene='<div style="display:flex;align-items:flex-end;flex:1;justify-content:center">'
+            + '<div style="width:'+pw+'px;flex:none">'+plantSvg(pstg)+'</div>'
+            + '<div style="width:'+fw+'px;flex:none;position:relative;z-index:2;margin-left:2px">'+foxSvg(fw,{hungry:hungry, glow:f.stage>=3, stage:f.stage})+'</div>'
+            + '</div>';
+        }
+        return '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:2px;margin:6px 0 4px;min-height:'+(pstg>=3?150:104)+'px">'
+          + foxMeter(growPct, 'var(--progress)', '🪙', L('guardar','sparen'))
+          + scene
+          + foxMeter(Math.round(f.energy), (hungry?'#d9822b':'#eb6834'), '💡', L('aprender','lernen'))
+          + '</div>'; })()
+    + '<div class="kn" style="font-size:16px;margin-top:2px">'+(f.name||'Fex')+' · '+stageNm+mast+'</div>'
+    + '<div class="ks" style="margin-bottom:8px">'+(hungry?L('com fominha de aprender 💭','hat Hunger auf Wissen 💭'):L('feliz e curiosa ✨','glücklich und neugierig ✨'))+'</div>'
+    + (fedToday
+        ? '<div class="ks" style="margin-top:8px">'+L('já aprendeu hoje 🌟 amanhã tem mais','heute schon gelernt 🌟 morgen gibt es mehr')+'</div>'
+        : '<div class="ks" style="margin-top:8px;font-weight:700;color:var(--ink);text-decoration:underline" onclick="event.stopPropagation();openFoxQuiz()">'+L('💭 tem um quiz esperando por você','💭 ein Quiz wartet auf dich')+'</div>')
+    + '<div class="ks" style="margin-top:6px">🔥 '+(f.streak||0)+' '+L('dias seguidos','Tage in Folge')+'</div>'
+    + '</div>';
+}
+
+let FOXQ=null;
+function openFoxQuiz(){ FOXQ={qs:foxQuizToday(), i:0, correct:0}; foxQuizRender(); }
+function foxQuizRender(){
+  const s=FOXQ; if(!s) return; if(s.i>=s.qs.length) return foxQuizDone();
+  const q=s.qs[s.i];
+  showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(56,{stage:ensureFox().stage})+'</div>'
+    + '<div class="klabel" style="text-align:center">'+L('Quiz da raposinha','Fuchs-Quiz')+' · '+(s.i+1)+'/'+s.qs.length+'</div>'
+    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:6px 2px 14px">'+q.q+'</div>'
+    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+opt+'</button>').join(''));
+}
+function foxAnswer(idx){
+  const s=FOXQ; if(!s) return; const q=s.qs[s.i]; const ok=idx===q.c; if(ok) s.correct++;
+  showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(64,{glow:ok, stage:ensureFox().stage})+(ok?' <span style="font-size:34px">🎉</span>':'')+'</div>'
+    + '<div class="sh-title" style="text-align:center">'+(ok?L('Acertou!','Richtig!'):L('Quase!','Fast!'))+'</div>'
+    + '<div class="sh-sub" style="text-align:center">'+q.tip+'</div>'
+    + '<button class="kbtn" style="margin-top:14px" onclick="foxNext()">'+((s.i+1>=s.qs.length)?L('Ver resultado ›','Ergebnis ›'):L('Próxima ›','Weiter ›'))+'</button>');
+}
+function foxNext(){ const s=FOXQ; if(!s) return; s.i++; foxQuizRender(); }
+function foxQuizDone(){
+  const s=FOXQ, f=ensureFox(), gain=s.correct*14;
+  f.energy=Math.min(100, f.energy+gain);
+  const today=foxTodayISO();
+  if(f.lastQuizISO!==today){ f.streak=(f.streak||0)+1; f.lastQuizISO=today; }
+  let card=null; const owned=new Set(f.wisdom||[]); const pool=WISDOM.filter(w=>!owned.has(w.id));
+  if(pool.length && s.correct>0){ card=pool[(function(){try{return new Date().getDate();}catch(e){return 0;}})()%pool.length]; f.wisdom.push(card.id); }
+  showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(88,{glow:true, stage:ensureFox().stage})+'</div>'
+    + '<div class="sh-title" style="text-align:center">'+L('A raposinha se alimentou!','Der Fuchs wurde gefüttert!')+'</div>'
+    + '<div class="sh-sub" style="text-align:center">'+L('Você acertou '+s.correct+' de '+s.qs.length+' · +'+gain+' de energia','Du hattest '+s.correct+' von '+s.qs.length+' richtig · +'+gain+' Energie')+'</div>'
+    + (card?'<div class="kcard" style="margin-top:14px;text-align:left"><div class="klabel">'+L('nova carta de sabedoria 📜','neue Weisheitskarte 📜')+'</div><div class="kn" style="font-size:15px">'+L(card.t[0],card.t[1])+'</div><div class="ks">'+L(card.b[0],card.b[1])+'</div></div>':'')
+    + '<button class="kbtn" style="margin-top:14px" onclick="closeSheet();render()">'+L('Oba! 🎉','Juhu! 🎉')+'</button>');
+  FOXQ=null;
+}
+
+function openFoxWorld(){
+  const f=ensureFox(), rate=Math.round(foxSavingsRate()*100), healthy=rate>=40, stageNm=foxStageName(f.stage), owned=f.wisdom||[];
+  const cards=WISDOM.map(w=> owned.includes(w.id)
+    ? '<div class="kcard" style="text-align:left;margin-bottom:6px"><div class="kn" style="font-size:14px">📜 '+L(w.t[0],w.t[1])+'</div><div class="ks">'+L(w.b[0],w.b[1])+'</div></div>'
+    : '<div class="kcard" style="text-align:left;margin-bottom:6px;opacity:.5"><div class="kn" style="font-size:14px">🔒 '+L('carta ainda escondida','Karte noch versteckt')+'</div></div>').join('');
+  const pstg=foxPlantStage(), juros=foxTotalJuros();
+  showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(96,{glow:f.stage>=3, stage:f.stage})+'</div>'
+    + '<div class="sh-title" style="text-align:center">'+(f.name||'Fex')+' · '+stageNm+((f.stage>=3&&f.mastery)?' '+'✦'.repeat(Math.min(5,f.mastery)):'')+'</div>'
+    + '<div class="sh-sub" style="text-align:center">'+L('Ela cresce quando você mantém o hábito de poupar.','Er wächst, wenn du beim Sparen dranbleibst.')+'</div>'
+    + '<div class="klabel" style="text-align:left;margin:14px 0 4px">'+L('crescimento pela poupança','Wachstum durchs Sparen')+'</div>'
+    + '<div class="hb-track"><div class="hb-fill" style="width:'+(f.stage>=3?100:Math.round(f.growth))+'%;background:var(--desejo)"></div></div>'
+    + '<div class="ks" style="margin-top:4px">'+L('sua taxa de poupança agora: ','deine Sparquote jetzt: ')+rate+'% '+(healthy?L('— ótimo, a raposa cresce! 🌟','— super, der Fuchs wächst! 🌟'):L('— guarde um pouco mais 🌱','— spar etwas mehr 🌱'))+'</div>'
+    + (f.stage<3
+        ? '<button class="kbtn line" style="margin-top:10px" onclick="foxGrowDemo()">'+L('⏩ simular 1 semana poupando · demo','⏩ 1 Sparwoche simulieren · Demo')+'</button>'
+        : '<div class="note" style="margin-top:10px">'+L('já é uma raposa sábia! agora ela ganha estrelas de mestria ✦','schon ein weiser Fuchs! jetzt sammelt er Meister-Sterne ✦')+'</div>')
+    + '<div class="klabel" style="text-align:left;margin:16px 0 4px">'+L('a plantinha do dinheiro (cresce com os juros)','die Geld-Pflanze (wächst mit den Zinsen)')+'</div>'
+    + '<div class="kcard" style="text-align:center"><div style="width:120px;margin:0 auto">'+plantSvg(pstg)+'</div>'
+    + '<div class="kn" style="font-size:15px;margin-top:6px">'+L('Cresceu <b>+'+fmt0(juros)+'</b> sozinha! 🎉','Um <b>+'+fmt0(juros)+'</b> gewachsen — ganz von allein! 🎉')+'</div>'
+    + '<div class="ks" style="margin-top:2px">'+L('você não mexeu — ela cresceu enquanto você brincava. Quanto mais você guarda, MAIOR ela fica! 🌱','du hast nichts gemacht — sie ist gewachsen, während du gespielt hast. Je mehr du sparst, desto GRÖSSER wird sie! 🌱')+' · '+foxPlantName(pstg)+'</div>'
+    + '<button class="kbtn line" style="margin-top:10px" onclick="foxPlantDemo()">'+L('⏩ receber juros · demo','⏩ Zinsen erhalten · Demo')+'</button></div>'
+    + '<div class="klabel" style="text-align:left;margin:16px 0 4px">'+L('energia (alimente com quizzes)','Energie (mit Quiz füttern)')+' · '+Math.round(f.energy)+'%</div>'
+    + '<div class="hb-track"><div class="hb-fill" style="width:'+Math.round(f.energy)+'%;background:var(--progress)"></div></div>'
+    + '<div class="klabel" style="text-align:left;margin:16px 0 6px">'+L('cartas de sabedoria','Weisheitskarten')+' · '+owned.length+'/'+WISDOM.length+'</div>'
+    + cards
+    + '<button class="kbtn" style="margin-top:12px" onclick="closeSheet()">'+L('Fechar','Schließen')+'</button>');
+}
+function foxGrowDemo(){
+  const f=ensureFox();
+  if(foxSavingsRate()<0.40){ toast(L('Guarde um pouco mais e a raposa cresce! 🌱','Spar etwas mehr und der Fuchs wächst! 🌱')); return; }
+  f.growth+=25;
+  if(f.growth>=100){
+    if(f.stage<3){ f.stage++; f.growth=0; toast(L('🎉 A raposa evoluiu para '+foxStageName(f.stage)+'!','🎉 Der Fuchs ist zu '+foxStageName(f.stage)+' gewachsen!')); }
+    else { f.mastery=(f.mastery||0)+1; f.growth=0; toast(L('🎉 Mestria ✦ conquistada!','🎉 Meisterschaft ✦ erreicht!')); }
+    try{ informParent('🦊', L(state.name+' fez a raposinha crescer poupando!', state.name+' hat den Fuchs durchs Sparen wachsen lassen!')); }catch(e){}
+  }
+  render(); openFoxWorld();
+}
+function foxPlantDemo(){
+  ensureFox(); const before=foxPlantStage();
+  state.potHistory=state.potHistory||{}; state.potHistory.defesa=state.potHistory.defesa||[];
+  const add=2.5; state.potHistory.defesa.push({day:L('hoje','heute'),name:'Juros da família (+5%)',amt:add,icon:'🌱'});
+  state.balances.defesa+=add;
+  const after=foxPlantStage();
+  toast(after>before ? L('🌳 A plantinha cresceu — virou '+foxPlantName(after)+'!','🌳 Die Pflanze ist gewachsen — jetzt '+foxPlantName(after)+'!')
+                     : L('🌱 +'+fmt0(add)+' de juros! o dinheiro cresceu sozinho.','🌱 +'+fmt0(add)+' Zinsen! das Geld ist von allein gewachsen.'));
+  render(); openFoxWorld();
+}
+
 function renderKid(){
   const t = total();
+  renderFox();
   document.getElementById('kTotal').textContent = fmt0(t).replace('€','€ ');
   // cofrinhos — o preenchimento tem SIGNIFICADO:
   //   Sonhar/Aprender: progresso das casinhas (cheio = objetivo alcançado)
@@ -5182,16 +5550,17 @@ function applyCalc(v){
 
 // ---- dados da conta (cada wallet Treezor tem IBAN próprio) ----
 const ACCOUNTS = {
-  card:{ name:'Wallet Cartão', iban:'DE89 3704 0044 0532 0154 D21', purpose:'é a conta do cartão — o que entra aqui, dá para gastar' },
-  cofre:{ name:'Wallet Cofre', iban:'DE89 3704 0044 0532 0157 C03', purpose:'dinheiro recebido e poupança — o que entra aqui vai para as casinhas' },
+  card:{ name:'Saldo disponível', iban:'DE89 3704 0044 0532 0154 D21', purpose:'é a conta do cartão — o que entra aqui, dá para gastar' },
+  cofre:{ name:'Saldo poupado', iban:'DE89 3704 0044 0532 0157 C03', purpose:'dinheiro recebido e poupança — o que entra aqui vai para as casinhas' },
 };
+function acctName(which){ return which==='card' ? L('Saldo disponível','Verfügbares Guthaben') : L('Saldo poupado','Gespartes Guthaben'); }
 function acctBlock(which){
   const a = ACCOUNTS[which];
   const bal = which==='card' ? state.balances.despesa
     : state.balances.desenv+state.balances.desejo+state.balances.defesa+state.balances.dign;
   return '<div class="kcard" style="margin-bottom:10px">'
     + '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">'
-    + '<b style="font-size:14px">'+(which==='card'?'💳 ':'🐷 ')+a.name+'</b>'
+    + '<b style="font-size:14px">'+(which==='card'?'💳 ':'🐷 ')+acctName(which)+'</b>'
     + '<span style="margin-left:auto;font-weight:800;font-size:16px">'+fmt(bal)+'</span></div>'
     + '<div class="sh-note" style="text-align:left;margin:0 0 8px">'+a.purpose+'</div>'
     + '<div class="klabel" style="text-align:left">IBAN</div>'
@@ -5203,7 +5572,7 @@ function acctBlock(which){
 }
 function openAccountSheet(which){
   let html = '<div class="grab"></div><div class="sh-emoji msy">&#xE84F;</div>'
-    + '<div class="sh-title">'+(which ? ACCOUNTS[which].name : 'Minha conta')+'</div>'
+    + '<div class="sh-title">'+(which ? acctName(which) : L('Minha conta','Mein Konto'))+'</div>'
     + '<div class="sh-sub">Titular: '+state.name+' S. (menor) · resp.: João S. · BIC TRZOFR21XXX — '
     + 'Treezor (grupo Société Générale)</div>';
   html += which ? acctBlock(which) : acctBlock('cofre') + acctBlock('card');
@@ -7960,6 +8329,8 @@ parentFeed.push(
   {icon:'⭐', text:'Ludo completou <b>"Arrumar a cama"</b> 4 dias seguidos. 🔥', unread:false, who:'Ludo'});
 selectChild(0);
 _i18nStart();
+// O quiz da raposinha aparece sozinho ao abrir o app (1x por dia). A criança responde ou fecha.
+setTimeout(function(){ try{ if(curMode==='child' && isKid()){ const f=ensureFox(); if(f.lastQuizISO!==foxTodayISO()) openFoxQuiz(); } }catch(e){} }, 2600);
 </script>
 </body>
 </html>
