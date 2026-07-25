@@ -1296,8 +1296,13 @@ const ALICE = {
 };
 
 let family = { parentBalance:180, children:[LUDO, ALICE], cur:0,
-  // Juros da Família: e-money não pode render (EMD2 art.12) — quem remunera o hábito é o PAI,
-  // como mesada extra sobre Guardar + Ser livre. Pedagogia de juros compostos, 100% legal.
+  // Juros da Família: quem remunera o hábito é o RESPONSÁVEL, da própria carteira,
+  // como mesada extra sobre Guardar + Ser livre — nunca o emissor de e-money, que pela
+  // Diretiva 2009/110/CE (EMD2) art. 12 não concede juros nem vantagem ligada ao tempo
+  // de posse do saldo. A regra vincula o emissor; a redação obrigatória é a da
+  // transposição nacional aplicável e a do contrato-quadro do emissor parceiro.
+  // PENDENTE: validação por advogado contra a estrutura contratual real da BaaS
+  // antes de qualquer uso em produção. Nada aqui é parecer jurídico.
   famInterest:{on:true, pct:5},
   // meta compartilhada: toda a família rema junto (livro l.3897, 6417)
   sharedGoal:{name:'Viagem para a praia', icon:'🏖️', price:300, saved:120, contrib:{'João':100,'Ludo':12,'Alice':8}},
@@ -1606,6 +1611,47 @@ function investedAssets(){
   return Math.round((inv + Math.max(0,lucro))*100)/100;
 }
 function patrimonioAtivo(){ return investedAssets(); }  // compat
+// registro de vocabulário conforme a fase de idade configurada
+function apReg(){
+  const ph = (state && typeof state.phase === 'number') ? state.phase : 2;
+  return ph <= 1 ? 'kid' : ph === 2 ? 'mid' : 'teen';
+}
+function apVoc(reg){
+  reg = reg || apReg();
+  if(reg === 'kid') return {
+    reg: 'kid',
+    aWord: L('fica com você','bleibt bei dir'),
+    pWord: L('acabou','ist weg'),
+    aBtn:  L('🌱 Isso fica','🌱 Das bleibt'),
+    pBtn:  L('🍦 Isso acaba','🍦 Das ist weg'),
+    q:     L('Isso <b>fica</b> com você ou <b>acaba</b>?','<b>Bleibt</b> das bei dir oder ist es <b>weg</b>?'),
+    short: L('o que fica × o que acaba','was bleibt × was weg ist'),
+    def:   L('Tem coisa que a gente usa e acaba — o sorvete. Tem coisa que <b>fica com você</b> e ainda cresce sozinha — o dinheiro guardado. As duas podem ser boas. Só uma continua sendo sua amanhã.',
+             'Manche Dinge benutzt man, und dann sind sie weg — das Eis. Andere <b>bleiben bei dir</b> und wachsen sogar von allein — gespartes Geld. Beides kann gut sein. Nur eines gehört dir auch morgen noch.')
+  };
+  if(reg === 'mid') return {
+    reg: 'mid',
+    aWord: L('ativo (fica e rende)','Aktivum (bleibt und wächst)'),
+    pWord: L('passivo (acaba)','Passivum (ist weg)'),
+    aBtn:  L('🌱 Ativo — fica','🌱 Aktivum — bleibt'),
+    pBtn:  L('🍦 Passivo — acaba','🍦 Passivum — weg'),
+    q:     L('Depois dessa compra, o dinheiro <b>continua seu</b> de alguma forma?','Gehört dir das Geld nach diesem Kauf noch <b>irgendwie</b>?'),
+    short: L('ativo = continua sendo seu depois da compra','Aktivum = gehört dir auch nach dem Kauf noch'),
+    def:   L('<b>Ativo</b> é o que continua sendo seu depois que você paga: fica guardado, rende juros ou serve por muito tempo. <b>Passivo</b> é o que acaba na hora — foi bom, mas não volta.',
+             '<b>Aktivum</b> ist das, was nach dem Bezahlen deines bleibt: es liegt gespart, bringt Zinsen oder hält lange. <b>Passivum</b> ist das, was sofort weg ist — es war schön, aber es kommt nicht zurück.')
+  };
+  return {
+    reg: 'teen',
+    aWord: L('ativos (trabalham)','Vermögenswerte (arbeiten)'),
+    pWord: L('passivos','Passiva'),
+    aBtn:  L('🎯 Ativo','🎯 Aktivum'),
+    pBtn:  L('💨 Passivo','💨 Passivum'),
+    q:     L('Isso <b>devolve</b> alguma coisa depois de comprado, ou só sai?','<b>Gibt</b> das nach dem Kauf etwas zurück, oder ist es nur weg?'),
+    short: L('ativo = devolve dinheiro, renda ou valor de revenda','Aktivum = gibt Geld, Einkommen oder Wiederverkaufswert zurück'),
+    def:   L('<b>Ativo</b> é o que devolve alguma coisa depois de comprado: rende juros, gera renda ou guarda valor que dá pra revender. <b>Passivo</b> é o que só consome — acaba, ou ainda cobra manutenção.',
+             '<b>Aktivum</b> ist das, was nach dem Kauf etwas zurückgibt: es bringt Zinsen, erzeugt Einkommen oder behält einen Wiederverkaufswert. <b>Passivum</b> ist das, was nur verbraucht — es endet oder kostet sogar weiter.')
+  };
+}
 function ativosHtml(voice){   // voice: 'teen' | 'parent' | 'kid'
   const kid = voice==='kid';
   const sp = kindSplit();
@@ -1618,17 +1664,43 @@ function ativosHtml(voice){   // voice: 'teen' | 'parent' | 'kid'
       + '<div style="width:'+pa+'%;background:var(--good-text)"></div>'
       + '<div style="flex:1;background:#d03b3b"></div></div>'
     : '';
+  const voc = apVoc(kid ? 'kid' : null);
   const legend = '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700">'
-    + '<span style="color:var(--good-text)">● '+L(kid?'trabalham por mim':'ativos (trabalham)', kid?'arbeiten für mich':'Vermögenswerte (arbeiten)')+' '+fmt0(ativos)+'</span>'
-    + '<span style="color:#d03b3b">'+L(kid?'viraram sorvete':'passivos', kid?'wurden zu Eis':'Passiva')+' '+fmt0(passivos)+' ●</span></div>';
+    + '<span style="color:var(--good-text)">● '+voc.aWord+' '+fmt0(ativos)+'</span>'
+    + '<span style="color:#d03b3b">'+voc.pWord+' '+fmt0(passivos)+' ●</span></div>';
+  // a definição vem antes do número: sem ela, "ativo" vira sinônimo de "coisa boa"
+  const define = voice==='parent' ? ''
+    : '<div class="note" style="margin-top:8px;text-align:left">'+voc.def+'</div>'
+      + (voc.reg==='teen'
+          ? '<div class="note" style="margin-top:6px;text-align:left">'
+            + L('Cuidado com o atalho: <b>ativo não quer dizer coisa boa</b>. Um sorvete com um amigo pode valer mais do que €3 parados. Ativo é uma categoria contábil — o que vale a pena continua sendo decisão sua.',
+                'Vorsicht mit der Abkürzung: <b>Aktivum heißt nicht „gut"</b>. Ein Eis mit einer Freundin kann mehr wert sein als 3 € auf dem Konto. Aktivum ist eine Buchhaltungs-Kategorie — was sich lohnt, entscheidest weiter du.')+'</div>'
+          : '');
+  // o responsável vê a escada inteira: para não corrigir a criança usando a
+  // definição de uma idade que ainda não é a dela
+  const ladder = voice==='parent'
+    ? '<div style="background:var(--page);border-radius:14px;padding:11px 12px;margin-top:10px">'
+      + '<div style="font-weight:800;font-size:13px">'+L('O que a palavra significa em cada idade','Was das Wort in jedem Alter bedeutet')+'</div>'
+      + [['kid','3–10'],['mid','11–13'],['teen','14–18']].map(function(r){
+          const vv = apVoc(r[0]), now = (r[0] === apReg());
+          return '<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--grid);font-size:12.5px;line-height:1.45">'
+            + '<div style="flex:none;width:48px;font-weight:800;color:'+(now?'var(--ink)':'var(--muted)')+'">'+r[1]+'</div>'
+            + '<div style="flex:1;color:'+(now?'var(--ink)':'var(--muted)')+'">'+vv.short
+            +   (now ? ' · <b>'+L('é o que '+state.name+' vê agora','das sieht '+state.name+' jetzt')+'</b>' : '')+'</div></div>';
+        }).join('')
+      + '<div class="note" style="margin:7px 0 0">'
+      + L('Antes dos 11 anos o app não usa as palavras ativo e passivo. Usa permanência — a parte da ideia que essa idade consegue testar sozinha, com o próprio sorvete na mão.',
+          'Vor dem 11. Lebensjahr benutzt die App die Wörter Aktivum und Passivum nicht. Sie benutzt Beständigkeit — den Teil der Idee, den dieses Alter selbst überprüfen kann, mit dem eigenen Eis in der Hand.')+'</div>'
+      + '</div>'
+    : '';
   const hasBiz = state.biz && state.biz.length;
   const why = '<div class="note" style="margin-top:8px;text-align:left">'
     + (kid
-      ? L('🛡️ Guardar e 🕊️ Ser livre <b>rendem juros</b> — o dinheiro ali é <b>ativo</b>, trabalha por você','🛡️ Bewahren und 🕊️ Frei sein <b>bringen Zinsen</b> — das Geld dort ist <b>aktiv</b> und arbeitet für dich')
+      ? L('🛡️ Guardar e 🕊️ Ser livre <b>rendem os juros da família</b> — quem paga é quem cuida de você, e o dinheiro ali é <b>ativo</b>','🛡️ Bewahren und 🕊️ Frei sein <b>bringen Familienzinsen</b> — gezahlt von den Menschen, die für dich sorgen, und das Geld dort ist <b>aktiv</b>')
       : voice==='parent'
-        ? L('Defesa 🛡️ + Dignidade 🕊️ rendem juros — o saldo ali é <b>dinheiro investido em ativos</b>','Absicherung 🛡️ + Würde 🕊️ bringen Zinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>')
+        ? L('Defesa 🛡️ + Dignidade 🕊️ rendem os juros da família, pagos por você — o saldo ali é <b>dinheiro investido em ativos</b>','Absicherung 🛡️ + Würde 🕊️ bringen die von Ihnen gezahlten Familienzinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>')
           + L(' de ',' von ')+state.name
-        : L('Guardar 🛡️ + Ser livre 🕊️ rendem juros — o saldo ali é <b>dinheiro investido em ativos</b>','Bewahren 🛡️ + Frei sein 🕊️ bringen Zinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>'))
+        : L('Guardar 🛡️ + Ser livre 🕊️ rendem os juros da família — o saldo ali é <b>dinheiro investido em ativos</b>','Bewahren 🛡️ + Frei sein 🕊️ bringen Familienzinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>'))
     + (hasBiz ? L(' (+ o lucro do negocinho)',' (+ der Gewinn des kleinen Ladens)') : '') + '.</div>';
   const nudge = sp.sem>0
     ? (kid
@@ -1640,8 +1712,9 @@ function ativosHtml(voice){   // voice: 'teen' | 'parent' | 'kid'
           + '</button></div>')
     : '';
   const quote = '<div class="quote" style="margin-top:10px">'+L('"Um passivo é como um sorvete: gostoso enquanto dura, mas não deixa nada para o futuro." — O Poder da Mesada','„Ein Passivum ist wie ein Eis: lecker, solange es hält, aber es bleibt nichts für die Zukunft." — O Poder da Mesada')+'</div>';
-  return (tot>0 ? legend + bar : '<div class="note" style="margin:0">Comece a guardar: o que rende juros já conta como ativo. 🌱</div>')
-    + why + nudge + (voice==='teen' ? quote : '');
+  return (tot>0 ? legend + bar : '<div class="note" style="margin:0">'
+      + L('Comece a guardar: o que fica e rende já conta do lado verde. 🌱','Fang an zu sparen: was bleibt und wächst, zählt schon auf der grünen Seite. 🌱')+'</div>')
+    + define + why + ladder + nudge + (voice==='teen' ? quote : '');
 }
 // "pra onde o dinheiro foi" — por categoria do MUNDO REAL (não por pilar 5D).
 // custo de negócio vira linha própria (ex.: Negócio: Brigadeiros).
@@ -2132,7 +2205,9 @@ function render(){
   renderChildSelector();
   const ta = document.getElementById('tAtivos'); if(ta) ta.innerHTML = ativosHtml('teen');
   const paEl = document.getElementById('pAtivos'); if(paEl) paEl.innerHTML = ativosHtml('parent');
-  const apH = document.getElementById('apHint'); if(apH) apH.textContent = L('como '+state.name+' classifica','wie '+state.name+' klassifiziert');
+  const apH = document.getElementById('apHint');
+  if(apH) apH.textContent = L('o que '+state.name+' vê aos '+((PHASES[state.phase]||{}).chip||'')+' anos',
+                              'was '+state.name+' mit '+((PHASES[state.phase]||{}).chip||'')+' Jahren sieht');
   const fib = document.getElementById('famInterestBox'); if(fib) fib.innerHTML = famIntHtml();
   const fk = document.getElementById('famKids'); if(fk) fk.innerHTML = famKidsHtml();
   const mb = document.getElementById('mentorBox'); if(mb) mb.innerHTML = mentorBoxHtml();
@@ -2685,6 +2760,7 @@ function dayTR(s){
 const tipIdx = {home:0, sonho:0, tarefas:0, cartao:0, negocio:0};
 let pTab = 'inicio';
 function pGo(tab){
+  closeSheet();       // nenhuma folha atravessa a troca de aba
   pTab = tab;
   ['inicio','rel','ptarefas','pcartao','comb'].forEach(t=>{
     document.getElementById('ptab-'+t).classList.toggle('hidden', t!==tab);
@@ -2933,39 +3009,126 @@ const WISDOM = [
   {id:6, t:['Todo sonho tem um plano','Jeder Traum hat einen Plan'], b:['Um sonho vira realidade quando ganha um preço e um pouquinho por semana.','Ein Traum wird wahr, wenn er einen Preis bekommt und ein bisschen pro Woche.']},
 ];
 
-function foxQuizToday(){
-  const c=state;
-  const bank=[
-    {q:['O que é melhor fazer assim que a mesada chega?','Was machst du am besten, sobald das Taschengeld kommt?'],
-     o:[['Gastar tudo rapidinho','Alles schnell ausgeben'],['Guardar um pouquinho primeiro','Zuerst ein bisschen sparen'],['Esconder embaixo da cama','Unters Bett verstecken']],c:1,
-     tip:['Guardar primeiro é o segredo de quem junta! 🌱','Zuerst sparen ist das Geheimnis! 🌱']},
-    {q:['Um videogame que você quer muito é...','Ein Videospiel, das du sehr willst, ist...'],
-     o:[['Uma necessidade','Ein Bedarf'],['Um desejo','Ein Wunsch'],['Um imposto','Eine Steuer']],c:1,
-     tip:['É um desejo — dá pra realizar, com um plano! 🎯','Das ist ein Wunsch — erfüllbar, mit einem Plan! 🎯']},
-    {q:['Por que guardar dinheiro cedo é tão bom?','Warum ist früh sparen so gut?'],
-     o:[['Porque rende sozinho com o tempo','Weil es mit der Zeit von allein wächst'],['Porque some','Weil es verschwindet'],['Não tem vantagem','Kein Vorteil']],c:0,
-     tip:['Os juros trabalham por você — quanto antes, melhor! ⏳','Zinsen arbeiten für dich — je früher, desto besser! ⏳']},
-    {q:['O cofrinho da Dignidade serve pra...','Das Würde-Sparschwein ist für...'],
-     o:[['Gastar no fim de semana','Am Wochenende ausgeben'],['Ficar guardado pra sempre, só seu','Für immer sparen, nur für dich'],['Emprestar pros amigos','Freunden leihen']],c:1,
-     tip:['A Dignidade é intocável — te dá liberdade de dizer não. 🕊️','Die Würde ist unantastbar — Freiheit, nein zu sagen. 🕊️']},
-    {q:['O que é uma "necessidade"?','Was ist ein "Bedarf"?'],
-     o:[['Algo que você precisa mesmo, tipo comida','Etwas, das du wirklich brauchst, z.B. Essen'],['O brinquedo mais caro da loja','Das teuerste Spielzeug'],['Um doce extra','Ein extra Bonbon']],c:0,
-     tip:['Necessidade é o essencial; desejo é o extra. Os dois têm lugar! 💡','Bedarf ist das Nötige; Wunsch ist das Extra. Beides hat Platz! 💡']},
+// ---- CENÁRIOS DE DECISÃO ---------------------------------------------------
+// Não é um quiz de conhecimento: cada item é uma situação com dinheiro real em
+// jogo, pressão de tempo ou de grupo, e três saídas plausíveis. O que se mede
+// não é se a criança sabe a definição de "desejo", é o que ela faria.
+// Cada cenário declara a competência 5D que exercita (k), para que a resposta
+// possa virar evidência rastreável no Diagnóstico.
+function foxScenarioBank(){
+  const c = state;
+  const day = (function(){try{return new Date().getDate();}catch(e){return 3;}})();
+  const have = Math.max(2, Math.round(c.balances.desejo || 3));
+  const dign = Math.max(3, Math.round(c.balances.dign || 8));
+  const bank = [
+    {k:'plan',
+     sit:['Sua mesada acabou de cair na conta.','Dein Taschengeld ist gerade angekommen.'],
+     q:['O que você faz primeiro?','Was machst du zuerst?'],
+     o:[['Separo um pouco antes de gastar qualquer coisa','Ich lege zuerst etwas beiseite, bevor ich etwas ausgebe'],
+        ['Gasto no que der vontade e vejo o que sobra','Ich gebe aus, worauf ich Lust habe, und schaue, was übrig bleibt'],
+        ['Deixo tudo parado e decido outro dia','Ich lasse alles liegen und entscheide ein andermal']],
+     c:0,
+     tip:['Separar primeiro é o que faz sobrar. Quem espera sobrar quase nunca vê sobrar.',
+          'Zuerst beiseitelegen ist der Grund, warum etwas übrig bleibt. Wer auf den Rest wartet, sieht selten einen.']},
+
+    {k:'imp',
+     sit:['Você está na loja com €'+have+' no cartão. Aquele brinquedo que você viu ontem está ali na sua frente.',
+          'Du stehst im Laden mit €'+have+' auf der Karte. Das Spielzeug von gestern liegt direkt vor dir.'],
+     q:['E agora?','Und jetzt?'],
+     o:[['Compro agora, antes que acabe','Ich kaufe sofort, bevor es weg ist'],
+        ['Espero até amanhã e vejo se ainda quero','Ich warte bis morgen und schaue, ob ich es noch will'],
+        ['Peço pra outra pessoa comprar pra mim','Ich bitte jemand anderen, es für mich zu kaufen']],
+     c:1,
+     tip:['Esperar um dia não custa nada — e quase sempre mostra se o desejo era de verdade.',
+          'Einen Tag zu warten kostet nichts — und zeigt fast immer, ob der Wunsch echt war.']},
+
+    {k:'seg',
+     sit:['Um jogo grátis pede o número do cartão "só para confirmar a sua idade".',
+          'Ein Gratis-Spiel fragt nach der Kartennummer, "nur um dein Alter zu bestätigen".'],
+     q:['O que você faz?','Was machst du?'],
+     o:[['Digito, é só uma confirmação','Ich tippe sie ein, es ist ja nur eine Bestätigung'],
+        ['Chamo um adulto antes de digitar qualquer número','Ich hole eine erwachsene Person, bevor ich irgendeine Nummer eintippe'],
+        ['Uso o cartão de outra pessoa','Ich nehme die Karte von jemand anderem']],
+     c:1,
+     tip:['Nenhum jogo precisa do seu cartão para saber a sua idade. Pedir número de cartão é o sinal de golpe mais comum.',
+          'Kein Spiel braucht deine Karte, um dein Alter zu kennen. Nach der Kartennummer zu fragen ist das häufigste Betrugssignal.']},
+
+    {k:'prio',
+     sit:['O seu cofrinho de 🕊️ Ser livre tem €'+dign+'. Sai uma promoção que acaba hoje, também por €'+dign+'.',
+          'In deinem 🕊️ Frei-sein-Sparschwein sind €'+dign+'. Es gibt ein Angebot, das heute endet — auch für €'+dign+'.'],
+     q:['De onde sai o dinheiro?','Woher kommt das Geld?'],
+     o:[['Do Ser livre — é promoção, depois eu reponho','Aus dem Frei-sein — ist ja ein Angebot, ich lege es später zurück'],
+        ['Do Querer, mesmo que eu tenha que esperar mais','Aus dem Wollen, auch wenn ich dann länger warten muss'],
+        ['Peço emprestado e devolvo semana que vem','Ich leihe es mir und gebe es nächste Woche zurück']],
+     c:1,
+     tip:['O Ser livre é intocável: ele existe para você poder dizer "não". Promoção que só vale hoje é pressa, não oportunidade.',
+          'Das Frei-sein ist unantastbar: Es gibt es, damit du "nein" sagen kannst. Ein Angebot, das nur heute gilt, ist Eile, keine Gelegenheit.']},
+
+    {k:'valor',
+     sit:['Duas mochilas na loja: uma de €12 que dura um ano, outra de €20 que dura três.',
+          'Zwei Rucksäcke: einer für €12, der ein Jahr hält, einer für €20, der drei Jahre hält.'],
+     q:['Qual sai mais barata no fim?','Welcher ist am Ende günstiger?'],
+     o:[['A de €12 — é o menor preço','Der für €12 — der niedrigste Preis'],
+        ['A de €20 — custa menos por ano','Der für €20 — er kostet weniger pro Jahr'],
+        ['Dá no mesmo','Kommt aufs Gleiche raus']],
+     c:1,
+     tip:['Preço é o que você paga hoje. Valor é quanto tempo aquilo serve para você.',
+          'Preis ist, was du heute zahlst. Wert ist, wie lange es dir dient.']},
+
+    {k:'prio',
+     sit:['Você quer duas coisas e só dá para uma: um jogo de €10 hoje, ou juntar mais três semanas para a bicicleta.',
+          'Du willst zwei Dinge, aber nur eins geht: ein Spiel für €10 heute, oder drei Wochen weiter fürs Fahrrad sparen.'],
+     q:['O que você escolhe?','Wofür entscheidest du dich?'],
+     o:[['O jogo — a bicicleta pode esperar sempre','Das Spiel — das Fahrrad kann immer warten'],
+        ['A bicicleta — e escrevo por que escolhi ela','Das Fahrrad — und ich schreibe auf, warum'],
+        ['Não decido agora','Ich entscheide jetzt nicht']],
+     c:1,
+     tip:['Escolher já é difícil. Escrever o porquê é o que faz a escolha durar até a semana seguinte.',
+          'Wählen ist schon schwer. Aufzuschreiben, warum, lässt die Wahl bis nächste Woche halten.']},
   ];
-  const day=(function(){try{return new Date().getDate();}catch(e){return 3;}})();
-  const qs=[ bank[day%bank.length], bank[(day+2)%bank.length] ];
-  const bud=(c.budgets||[]).slice().sort((x,y)=>y.spent-x.spent)[0];
+  // o terceiro cenário é sempre sobre a vida real desta criança
+  const bud = (c.budgets||[]).slice().sort((x,y)=>y.spent-x.spent)[0];
   if(bud && bud.spent>0){
-    qs.push({q:['Semana passada você mais gastou em "'+bud.name+'". Isso costuma ser...','Letzte Woche hast du am meisten für "'+TR(bud.name)+'" ausgegeben. Das ist meistens...'],
-      o:[['Um desejo (dá pra planejar)','Ein Wunsch (planbar)'],['Uma necessidade do dia a dia','Ein täglicher Bedarf'],['Depende — pode ser os dois','Kommt drauf an — beides']],c:2,
-      tip:['Perceber pra onde o dinheiro vai já é metade do caminho! 👀','Zu merken, wohin das Geld geht, ist die halbe Miete! 👀']});
+    bank.push({k:'org',
+      sit:['Semana passada o seu dinheiro foi mais para "'+bud.name+'".',
+           'Letzte Woche ging dein Geld vor allem in "'+TR(bud.name)+'".'],
+      q:['Antes de gastar de novo, o que ajuda mais?','Bevor du wieder ausgibst — was hilft am meisten?'],
+      o:[['Ver quanto já foi e combinar um teto','Nachsehen, wie viel schon weg ist, und ein Limit vereinbaren'],
+         ['Gastar igual e olhar no fim do mês','Genauso weiter und am Monatsende nachsehen'],
+         ['Nunca mais gastar nisso','Nie wieder etwas dafür ausgeben']],
+      c:0,
+      tip:['Ver para onde o dinheiro vai é metade do caminho. Um teto combinado é a outra metade — proibir não é planejar.',
+           'Zu sehen, wohin das Geld geht, ist die halbe Miete. Ein vereinbartes Limit ist die andere — Verbieten ist kein Planen.']});
   } else {
-    const have=Math.max(1,Math.round(c.balances.desejo||3)), price=have+(2+(day%4))*3, wk=Math.max(1,Math.ceil((price-have)/3));
-    qs.push({q:['Você tem €'+have+', o sonho custa €'+price+' e junta €3 por semana. Em quantas semanas dá?','Du hast €'+have+', der Traum kostet €'+price+' und du sparst €3 pro Woche. In wie vielen Wochen?'],
-      o:[[String(Math.max(1,wk-1)),String(Math.max(1,wk-1))],[String(wk),String(wk)],[String(wk+2),String(wk+2)]],c:1,
-      tip:['Planejar o sonho em semanas deixa tudo possível! 🗓️','Den Traum in Wochen planen macht alles möglich! 🗓️']});
+    const price = have + (2 + (day % 4)) * 3, wk = Math.max(1, Math.ceil((price - have) / 3));
+    bank.push({k:'plan',
+      sit:['Você tem €'+have+', o seu sonho custa €'+price+' e você consegue guardar €3 por semana.',
+           'Du hast €'+have+', dein Traum kostet €'+price+' und du kannst €3 pro Woche sparen.'],
+      q:['Em quantas semanas ele fica de pé?','In wie vielen Wochen steht er?'],
+      o:[[String(Math.max(1,wk-1)),String(Math.max(1,wk-1))],
+         [String(wk),String(wk)],
+         [String(wk+2),String(wk+2)]],
+      c:1,
+      tip:['Um sonho com número de semanas deixa de ser sonho e vira plano.',
+           'Ein Traum mit einer Wochenzahl ist kein Traum mehr, sondern ein Plan.']});
   }
-  return qs.map(x=>({q:L(x.q[0],x.q[1]), o:x.o.map(p=>L(p[0],p[1])), c:x.c, tip:L(x.tip[0],x.tip[1])}));
+  return bank;
+}
+function foxQuizToday(){
+  const bank = foxScenarioBank();
+  const day = (function(){try{return new Date().getDate();}catch(e){return 3;}})();
+  const fixed = bank.slice(0, bank.length-1), pers = bank[bank.length-1];
+  const qs = [ fixed[day % fixed.length], fixed[(day+2) % fixed.length], pers ];
+  return qs.map(x=>({
+    k: x.k,
+    sit: L(x.sit[0], x.sit[1]),
+    q:   L(x.q[0], x.q[1]),
+    o:   x.o.map(pp=>L(pp[0], pp[1])),
+    oPt: x.o.map(pp=>pp[0]),
+    oDe: x.o.map(pp=>pp[1]),
+    c:   x.c,
+    tip: L(x.tip[0], x.tip[1])
+  }));
 }
 
 function renderFox(){
@@ -3001,8 +3164,8 @@ function renderFox(){
     + '<div class="kn" style="font-size:16px;margin-top:2px">'+(f.name||'Fex')+' · '+stageNm+mast+'</div>'
     + '<div class="ks" style="margin-bottom:8px">'+(hungry?L('com fominha de aprender 💭','hat Hunger auf Wissen 💭'):L('feliz e curiosa ✨','glücklich und neugierig ✨'))+'</div>'
     + (fedToday
-        ? '<div class="ks" style="margin-top:8px">'+L('já aprendeu hoje 🌟 amanhã tem mais','heute schon gelernt 🌟 morgen gibt es mehr')+'</div>'
-        : '<div class="ks" style="margin-top:8px;font-weight:700;color:var(--ink);text-decoration:underline" onclick="event.stopPropagation();openFoxQuiz()">'+L('💭 tem um quiz esperando por você','💭 ein Quiz wartet auf dich')+'</div>')
+        ? '<div class="ks" style="margin-top:8px">'+L('já decidiu hoje 🌟 amanhã tem outro cenário','heute schon entschieden 🌟 morgen gibt es ein neues Szenario')+'</div>'
+        : '<div class="ks" style="margin-top:8px;font-weight:700;color:var(--ink);text-decoration:underline" onclick="event.stopPropagation();openFoxQuiz()">'+L('💭 tem um cenário de decisão esperando por você','💭 ein Entscheidungs-Szenario wartet auf dich')+'</div>')
     + '<div class="ks" style="margin-top:6px">🔥 '+(f.streak||0)+' '+L('dias seguidos','Tage in Folge')+'</div>'
     + '</div>';
 }
@@ -3011,30 +3174,63 @@ let FOXQ=null;
 // FOXQVIEW: qual tela do quiz está aberta, para poder redesenhar ao trocar de idioma
 let FOXQVIEW=null;
 function openFoxQuiz(){ FOXQ={qs:foxQuizToday(), i:0, correct:0}; foxQuizRender(); }
+// O cenário do dia só se convida sozinho quando a tela está livre. Se a criança
+// (ou o responsável) estiver com outra folha aberta, ele espera: o convite
+// continua no cartão da raposinha, sem roubar a tela de ninguém.
+function foxDailyOffer(){
+  if(curMode !== 'child' || !isKid()) return;
+  if(sheetIsOpen()) return;
+  const onb = document.getElementById('onb');
+  if(onb && !onb.classList.contains('hidden')) return;
+  const f = ensureFox();
+  if(f.lastQuizISO === foxTodayISO()) return;
+  openFoxQuiz();
+}
 // Redesenha o quiz aberto no idioma atual (chamado por setLang)
 function foxQuizRelang(){
   if(!FOXQ || !FOXQVIEW) return;
   if(FOXQVIEW.mode==='a') foxAnswerRender(FOXQVIEW.idx); else foxQuizRender();
 }
+function b5SkillOf(k){ return B5_SKILLS.filter(function(s){ return s.k===k; })[0] || null; }
 function foxQuizRender(){
   const s=FOXQ; if(!s) return; if(s.i>=s.qs.length) return foxQuizDone();
   FOXQVIEW={mode:'q'};
-  const q=s.qs[s.i];
+  const q=s.qs[s.i], sk=b5SkillOf(q.k);
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(56,{stage:ensureFox().stage})+'</div>'
-    + '<div class="klabel" style="text-align:center">'+L('Quiz da raposinha','Fuchs-Quiz')+' · '+(s.i+1)+'/'+s.qs.length+'</div>'
-    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:6px 2px 14px">'+BI(q.q)+'</div>'
-    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+BI(opt)+'</button>').join(''));
+    + '<div class="klabel" style="text-align:center">'+L('cenário de decisão','Entscheidungs-Szenario')+' '+(s.i+1)+'/'+s.qs.length
+    +   (sk ? ' · '+sk.ic+' '+L(sk.pt, sk.de) : '')+'</div>'
+    + '<div class="sh-sub" style="text-align:center;margin:8px 2px 2px">'+BI(q.sit)+'</div>'
+    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:4px 2px 14px">'+BI(q.q)+'</div>'
+    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+BI(opt)+'</button>').join('')
+    + (s.i===0 ? '<div class="note" style="text-align:center;margin:10px 2px 0">'
+        + L('Aqui ninguém tira nota. É uma decisão de verdade, em tamanho pequeno — e ela entra no seu Diagnóstico 5D.',
+            'Hier gibt niemand Noten. Es ist eine echte Entscheidung im Kleinformat — und sie fließt in deine 5D-Diagnose ein.')+'</div>' : '')
+    + '<button class="quiet" style="width:100%;margin-top:4px;padding:10px" onclick="closeSheet()">'+L('Agora não','Jetzt nicht')+'</button>');
 }
 function foxAnswer(idx){
-  const s=FOXQ; if(!s) return; if(idx===s.qs[s.i].c) s.correct++;
+  const s=FOXQ; if(!s) return;
+  const q=s.qs[s.i], ok=(idx===q.c);
+  if(ok) s.correct++;
+  // Dizer o que faria não é ter feito: a intenção declarada entra no Diagnóstico
+  // com peso menor que uma compra real e com rótulo que a distingue da evidência
+  // observada. Sem isso o Growth Map viraria uma prova disfarçada.
+  try{
+    if(q.k) b5Ev(state, q.k, ok?2:0.5,
+      'Em cenário de decisão, escolheu “'+q.oPt[idx]+'” (intenção declarada, não compra real)',
+      'Im Entscheidungs-Szenario „'+q.oDe[idx]+'“ gewählt (erklärte Absicht, kein echter Kauf)');
+  }catch(e){}
   foxAnswerRender(idx);
 }
 function foxAnswerRender(idx){
   const s=FOXQ; if(!s) return; const q=s.qs[s.i]; const ok=idx===q.c;
   FOXQVIEW={mode:'a', idx:idx};
+  const sk=b5SkillOf(q.k);
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(64,{glow:ok, stage:ensureFox().stage})+(ok?' <span style="font-size:34px">🎉</span>':'')+'</div>'
-    + '<div class="sh-title" style="text-align:center">'+(ok?L('Acertou!','Richtig!'):L('Quase!','Fast!'))+'</div>'
+    + '<div class="sh-title" style="text-align:center">'+(ok?L('Boa decisão!','Gute Entscheidung!'):L('Dá pra decidir melhor','Da geht es besser'))+'</div>'
     + '<div class="sh-sub" style="text-align:center">'+BI(q.tip)+'</div>'
+    + (sk ? '<div class="note" style="text-align:center;margin:8px 2px 0">'
+        + L('essa escolha exercita ','diese Wahl übt ')+sk.ic+' <b>'+L(sk.pt, sk.de)+'</b>'
+        + L(' — e fica registrada no seu Diagnóstico 5D',' — und wird in deiner 5D-Diagnose vermerkt')+'</div>' : '')
     + '<button class="kbtn" style="margin-top:14px" onclick="foxNext()">'+((s.i+1>=s.qs.length)?L('Ver resultado ›','Ergebnis ›'):L('Próxima ›','Weiter ›'))+'</button>');
 }
 function foxNext(){ const s=FOXQ; if(!s) return; s.i++; foxQuizRender(); }
@@ -3047,7 +3243,8 @@ function foxQuizDone(){
   if(pool.length && s.correct>0){ card=pool[(function(){try{return new Date().getDate();}catch(e){return 0;}})()%pool.length]; f.wisdom.push(card.id); }
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(88,{glow:true, stage:ensureFox().stage})+'</div>'
     + '<div class="sh-title" style="text-align:center">'+L('A raposinha se alimentou!','Der Fuchs wurde gefüttert!')+'</div>'
-    + '<div class="sh-sub" style="text-align:center">'+L('Você acertou '+s.correct+' de '+s.qs.length+' · +'+gain+' de energia','Du hattest '+s.correct+' von '+s.qs.length+' richtig · +'+gain+' Energie')+'</div>'
+    + '<div class="sh-sub" style="text-align:center">'+L('Em '+s.correct+' de '+s.qs.length+' cenários você foi pelo caminho do plano · +'+gain+' de energia',
+        'In '+s.correct+' von '+s.qs.length+' Szenarien bist du den Weg des Plans gegangen · +'+gain+' Energie')+'</div>'
     + (card?'<div class="kcard" style="margin-top:14px;text-align:left"><div class="klabel">'+L('nova carta de sabedoria 📜','neue Weisheitskarte 📜')+'</div><div class="kn" style="font-size:15px">'+L(card.t[0],card.t[1])+'</div><div class="ks">'+L(card.b[0],card.b[1])+'</div></div>':'')
     + '<button class="kbtn" style="margin-top:14px" onclick="closeSheet();render()">'+L('Oba! 🎉','Juhu! 🎉')+'</button>');
   FOXQ=null; FOXQVIEW=null;
@@ -3073,7 +3270,7 @@ function openFoxWorld(){
     + '<div class="kn" style="font-size:15px;margin-top:6px">'+L('Cresceu <b>+'+fmt0(juros)+'</b> sozinha! 🎉','Um <b>+'+fmt0(juros)+'</b> gewachsen — ganz von allein! 🎉')+'</div>'
     + '<div class="ks" style="margin-top:2px">'+L('você não mexeu — ela cresceu enquanto você brincava. Quanto mais você guarda, MAIOR ela fica! 🌱','du hast nichts gemacht — sie ist gewachsen, während du gespielt hast. Je mehr du sparst, desto GRÖSSER wird sie! 🌱')+' · '+foxPlantName(pstg)+'</div>'
     + '<button class="kbtn line" style="margin-top:10px" onclick="foxPlantDemo()">'+L('⏩ receber juros · demo','⏩ Zinsen erhalten · Demo')+'</button></div>'
-    + '<div class="klabel" style="text-align:left;margin:16px 0 4px">'+L('energia (alimente com quizzes)','Energie (mit Quiz füttern)')+' · '+Math.round(f.energy)+'%</div>'
+    + '<div class="klabel" style="text-align:left;margin:16px 0 4px">'+L('energia (cresce a cada cenário decidido)','Energie (wächst mit jedem entschiedenen Szenario)')+' · '+Math.round(f.energy)+'%</div>'
     + '<div class="hb-track"><div class="hb-fill" style="width:'+Math.round(f.energy)+'%;background:var(--progress)"></div></div>'
     + '<div class="klabel" style="text-align:left;margin:16px 0 6px">'+L('cartas de sabedoria','Weisheitskarten')+' · '+owned.length+'/'+WISDOM.length+'</div>'
     + cards
@@ -3945,20 +4142,27 @@ function unclassifiedSpends(){
 function edgeHint(t, kind, kid){
   const learns = t.pillar==='desenv' || /livro|gibi|curso|aula|revista|ingl/i.test(t.name);
   if(learns && kind==='passivo')
-    return kid ? ' <br><span style="opacity:.8">🦊 pensa comigo: aprender costuma te levar mais <b>perto</b> do que você quer 📚 — mas você decide!</span>'
-               : ' <br><span style="opacity:.8">🤔 aprender costuma te aproximar dos objetivos (ativo) — rende a vida toda. Mas a chamada é sua.</span>';
+    return kid ? ' <br><span style="opacity:.8">'+L('🦊 pensa comigo: o que você aprende <b>fica</b> com você pra sempre 📚 — mas você decide!','🦊 überleg mit mir: Was du lernst, <b>bleibt</b> für immer bei dir 📚 — aber du entscheidest!')+'</span>'
+               : ' <br><span style="opacity:.8">'+L('🤔 aprender costuma ser ativo — devolve valor a vida toda, mesmo sem devolver dinheiro agora. Mas a chamada é sua.','🤔 Lernen ist meistens ein Aktivum — es gibt lebenslang Wert zurück, auch wenn jetzt kein Geld zurückkommt. Aber du entscheidest.')+'</span>';
   return '';
 }
-function apWords(kid){
-  return kid
-    ? { q:'Isso te deixou mais PERTO ou mais LONGE do que você quer?',
-        aBtn:'🎯 Mais perto', pBtn:'💨 Mais longe',
-        aFb:'<div style="font-size:32px">🎯</div><b>Mais perto!</b><br><span style="font-size:13.5px">Isso te leva na direção do que você quer de verdade.</span>',
-        pFb:'<div style="font-size:32px">💨</div><b>Mais longe…</b><br><span style="font-size:13.5px">Esse dinheiro foi pra longe do seu sonho — às vezes vale, você que decide. 💛</span>' }
-    : { q:'Isso te aproxima do que você quer ou te afasta?',
-        aBtn:'🎯 Ativo', pBtn:'💨 Passivo',
-        aFb:'<div style="font-size:32px">🎯</div><b>Ativo — te aproxima.</b><br><span style="font-size:13.5px">Trabalha por você e te leva pros seus objetivos.</span>',
-        pFb:'<div style="font-size:32px">💨</div><b>Passivo — te afasta.</b><br><span style="font-size:13.5px">Saiu e não volta. Ter é ok, sabendo o que é.</span>' };
+// O jogo de classificar fala a mesma língua do cartão: a pergunta é sobre
+// permanência, não sobre "perto ou longe do sonho" — as duas coisas são
+// diferentes, e confundi-las é o que faz "ativo" virar sinônimo de "coisa boa".
+function apWords(){
+  const v = apVoc();
+  const fb = function(ic, tit, txt){
+    return '<div style="font-size:32px">'+ic+'</div><b>'+tit+'</b><br><span style="font-size:13.5px">'+txt+'</span>';
+  };
+  if(v.reg === 'kid') return { q: v.q, aBtn: v.aBtn, pBtn: v.pBtn,
+    aFb: fb('🌱', L('Esse fica!','Das bleibt!'), L('Esse dinheiro continua sendo seu — e ainda pode crescer.','Dieses Geld gehört weiter dir — und kann sogar wachsen.')),
+    pFb: fb('🍦', L('Esse acabou…','Das ist weg…'), L('Foi gostoso enquanto durou. Às vezes vale muito a pena — você que decide. 💛','Es war schön, solange es gedauert hat. Manchmal lohnt es sich sehr — du entscheidest. 💛')) };
+  if(v.reg === 'mid') return { q: v.q, aBtn: v.aBtn, pBtn: v.pBtn,
+    aFb: fb('🌱', L('Ativo — continua seu.','Aktivum — bleibt deins.'), L('Depois da compra o valor ainda está com você: guardado, rendendo ou servindo por muito tempo.','Nach dem Kauf ist der Wert noch bei dir: gespart, verzinst oder lange nutzbar.')),
+    pFb: fb('🍦', L('Passivo — acabou.','Passivum — vorbei.'), L('Saiu e não volta. Ter passivo não é erro: o que conta é saber a proporção.','Es ist raus und kommt nicht zurück. Passiva zu haben ist kein Fehler: es zählt das Verhältnis.')) };
+  return { q: v.q, aBtn: v.aBtn, pBtn: v.pBtn,
+    aFb: fb('🎯', L('Ativo — devolve algo.','Aktivum — gibt etwas zurück.'), L('Rende juros, gera renda ou guarda valor de revenda.','Es bringt Zinsen, erzeugt Einkommen oder behält Wiederverkaufswert.')),
+    pFb: fb('💨', L('Passivo — só sai.','Passivum — nur raus.'), L('Acaba ou ainda cobra manutenção. Ter é ok, sabendo o que é.','Es endet oder kostet weiter. Haben ist okay, wenn man weiß, was es ist.')) };
 }
 let classifyIdx = 0;
 function openClassifyGame(){
@@ -3966,11 +4170,11 @@ function openClassifyGame(){
   const list = unclassifiedSpends();
   if(!list.length){
     showSheet('<div class="grab"></div><div class="sh-emoji">🎉</div>'
-      + '<div class="sh-title">Tudo classificado!</div>'
+      + '<div class="sh-title">'+L('Tudo classificado!','Alles eingeordnet!')+'</div>'
       + '<div class="sh-sub">'+(isKid()
-        ? 'Você já sabe o que te leva mais perto e o que te afasta do que você quer. Olho de gente grande pro dinheiro! 🦊💛'
-        : 'Cada gasto do mês já tem etiqueta de ativo ou passivo. Consciência é meio caminho.')+'</div>'
-      + '<button class="kbtn" onclick="closeSheet()">Fechar</button>');
+        ? L('Você já sabe o que fica com você e o que só acaba. Olho de gente grande pro dinheiro! 🦊💛','Du weißt schon, was bei dir bleibt und was einfach weg ist. Ein Blick fürs Geld wie bei den Großen! 🦊💛')
+        : L('Cada gasto do mês já tem etiqueta de ativo ou passivo. Consciência é meio caminho.','Jede Ausgabe des Monats ist als Aktivum oder Passivum markiert. Bewusstsein ist der halbe Weg.'))+'</div>'
+      + '<button class="kbtn" onclick="closeSheet()">'+L('Fechar','Schließen')+'</button>');
     return;
   }
   classifyStep();
@@ -3982,11 +4186,11 @@ function classifyStep(fb){
     showSheet('<div class="grab"></div>'
       + (fb ? '<div class="ocard" style="text-align:center;margin-bottom:14px;border-style:dashed">'+fb+'</div>' : '')
       + '<div style="text-align:center;font-size:40px">🦊</div>'
-      + '<div class="sh-title">'+(kid?'Você me ensinou bastante!':'Tudo etiquetado!')+'</div>'
+      + '<div class="sh-title">'+(kid?L('Você me ensinou bastante!','Du hast mir viel beigebracht!'):L('Tudo etiquetado!','Alles markiert!'))+'</div>'
       + '<div class="sh-sub">'+(kid
-        ? 'Agora eu sei o que te leva mais perto e o que te afasta do que você quer. Obrigada por dividir comigo! 💛'
-        : 'Seu mês está classificado. Dá pra ver quanto do seu dinheiro trabalha por você.')+'</div>'
-      + '<button class="kbtn" onclick="closeSheet();'+(kid?'':'tGo(\'tinicio\')')+'">Ver meu resumo</button>');
+        ? L('Agora eu sei o que fica com você e o que acaba. Obrigada por dividir comigo! 💛','Jetzt weiß ich, was bei dir bleibt und was weg ist. Danke, dass du es mit mir geteilt hast! 💛')
+        : L('Seu mês está classificado. Dá pra ver quanto do seu dinheiro continua sendo seu.','Dein Monat ist eingeordnet. Man sieht, wie viel von deinem Geld weiter deins bleibt.'))+'</div>'
+      + '<button class="kbtn" onclick="closeSheet();'+(kid?'':'tGo(\'tinicio\')')+'">'+L('Ver meu resumo','Meine Übersicht ansehen')+'</button>');
     render(); return;
   }
   const t = list[0];
@@ -3997,21 +4201,21 @@ function classifyStep(fb){
     html += '<div class="ocard" style="text-align:center;margin-bottom:14px;border-style:dashed">'+fb+'</div>';
   }
   html += '<div style="text-align:center;font-size:15px;color:var(--muted);margin-bottom:4px">'
-    + (kid?'🦊 me ajuda com essa?':'classificar — '+val)+'</div>'
+    + (kid?L('🦊 me ajuda com essa?','🦊 hilfst du mir hiermit?'):L('classificar — '+val,'einordnen — '+val))+'</div>'
     + '<div style="text-align:center;margin:4px 0 6px">'
     + txIcon(t,true).replace('width:30px;height:30px','width:56px;height:56px;font-size:26px')+'</div>'
     + '<div class="sh-title" style="margin-bottom:2px">'+(t.merchant||t.name)+'</div>'
     + '<div class="sh-sub">'+val+(m.cat?' · '+m.cat:'')+(m.city?' · '+m.city:'')+'</div>'
     + '<div style="text-align:center;font-size:15px;font-weight:700;margin:6px 0 14px">'
-    + apWords(kid).q+'</div>'
+    + apWords().q+'</div>'
     + '<div style="display:flex;gap:10px">'
     + '<button class="kbtn" style="flex:1;background:var(--progress);box-shadow:0 5px 0 #114f37" onclick="classifyPick('+t.txid+',\'ativo\')">'
-    + apWords(kid).aBtn+'</button>'
+    + apWords().aBtn+'</button>'
     + '<button class="kbtn" style="flex:1" onclick="classifyPick('+t.txid+',\'passivo\')">'
-    + apWords(kid).pBtn+'</button></div>'
+    + apWords().pBtn+'</button></div>'
     + '<div style="text-align:center;margin-top:6px;font-size:13px;color:var(--muted)">'
-    + (list.length>1 ? 'faltam '+list.length+' · ' : '')
-    + '<span style="cursor:pointer;text-decoration:underline" onclick="closeSheet()">'+(kid?'agora não':'depois')+'</span></div>';
+    + (list.length>1 ? L('faltam '+list.length+' · ','noch '+list.length+' · ') : '')
+    + '<span style="cursor:pointer;text-decoration:underline" onclick="closeSheet()">'+(kid?L('agora não','jetzt nicht'):L('depois','später'))+'</span></div>';
   showSheet(html);
 }
 function classifyPick(txid, kind){
@@ -4019,7 +4223,7 @@ function classifyPick(txid, kind){
   const t = findAnyTx(txid); if(!t){ classifyStep(); return; }
   t.kind = kind;
   classifyIdx++;
-  const w = apWords(kid);
+  const w = apWords();
   const base = kind==='ativo' ? w.aFb : w.pFb;
   classifyStep(base + edgeHint(t, kind, kid));
 }
@@ -4027,8 +4231,10 @@ function setTxKind(txid, kind){
   const t = findAnyTx(txid); if(!t) return;
   t.kind = kind;
   toast(kind==='passivo'
-    ? (isKid()?'💨 Essa te afastou um pouco do seu sonho — às vezes vale, você que decide. 💛':'💨 Passivo — te afasta do objetivo. Ter é ok, sabendo o que é.')
-    : (isKid()?'🎯 Isso te levou mais perto do que você quer de verdade!':'🎯 Ativo — te aproxima dos seus objetivos.'));
+    ? (isKid()?L('🍦 Esse acabou — foi bom enquanto durou. Às vezes vale, você que decide. 💛','🍦 Das ist weg — es war schön, solange es gedauert hat. Manchmal lohnt es sich, du entscheidest. 💛')
+             :L('💨 Passivo — sai e não volta. Ter é ok, sabendo o que é.','💨 Passivum — es geht raus und kommt nicht zurück. Haben ist okay, wenn man weiß, was es ist.'))
+    : (isKid()?L('🌱 Esse fica com você — e ainda pode crescer!','🌱 Das bleibt bei dir — und kann sogar wachsen!')
+             :L('🎯 Ativo — devolve alguma coisa depois de comprado.','🎯 Aktivum — es gibt nach dem Kauf etwas zurück.')));
   openTxSheet(txid);
 }
 // conciliação com o negocinho: entrada = receita · compra = custo → lucro REAL
@@ -5338,23 +5544,30 @@ function openMentorLogSheet(){
 }
 function famIntHtml(){
   const fi = family.famInterest;
+  // A decisão de produto vem primeiro, porque é ela que o responsável precisa
+  // entender: o bônus sai da carteira dele. A referência jurídica vem depois,
+  // atribuída ao emissor e delimitada — não como sentença sobre a lei.
   let h = '<div class="note" style="margin:0 0 10px">'
-    + L('Dinheiro eletrônico não pode render juros (lei UE). Aqui é melhor: <b>você</b> paga um bônus mensal sobre o que ficar em <b>Defesa</b> e <b>Dignidade</b> — mesada extra que ensina juros compostos de verdade.',
-        'E-Geld darf keine Zinsen abwerfen (EU-Recht). Hier ist es besser: <b>Sie</b> zahlen einen monatlichen Bonus auf das, was in <b>Absicherung</b> und <b>Würde</b> bleibt — zusätzliches Taschengeld, das echten Zinseszins lehrt.')
+    + L('Quem paga o bônus é <b>você</b>, da sua própria carteira — não o emissor do dinheiro eletrônico. Ele incide sobre o que ficar em <b>Defesa</b> e <b>Dignidade</b>: mesada extra que ensina juros compostos de verdade, sem ser rendimento do saldo.',
+        'Den Bonus zahlen <b>Sie</b> aus Ihrer eigenen Wallet — nicht der E-Geld-Emittent. Er gilt für das, was in <b>Absicherung</b> und <b>Würde</b> bleibt: zusätzliches Taschengeld, das echten Zinseszins lehrt, ohne eine Verzinsung des Guthabens zu sein.')
+    + '</div>'
+    + '<div class="note" style="margin:0 0 10px;font-size:11.5px">'
+    + L('Por que assim: a Diretiva UE 2009/110 (art. 12) proíbe que o <b>emissor</b> de dinheiro eletrônico conceda juros ou qualquer outra vantagem ligada ao tempo em que o portador mantém o saldo. A regra alcança o emissor, não o responsável que recompensa um hábito da criança — conforme a transposição nacional aplicável e o contrato-quadro do emissor parceiro.',
+        'Warum das so ist: Die EU-Richtlinie 2009/110 (Art. 12) untersagt dem <b>Emittenten</b> von E-Geld, Zinsen oder einen sonstigen Vorteil zu gewähren, der an die Haltedauer des Guthabens gebunden ist. Die Regel richtet sich an den Emittenten, nicht an Eltern, die eine Gewohnheit ihres Kindes belohnen — nach Maßgabe der jeweiligen nationalen Umsetzung und des Rahmenvertrags des Partner-Emittenten.')
     + '</div>';
   h += '<div class="btnrow" style="margin-top:0">'
-    + '<button class="btn '+(fi.on?'':'secondary ')+'small" onclick="famInterestSet(true)">'+(fi.on?'✓ Ativo':'Ativar')+'</button>'
-    + '<button class="btn '+(fi.on?'secondary ':'')+'small" onclick="famInterestSet(false)">'+(fi.on?'Desligar':'✓ Desligado')+'</button></div>';
+    + '<button class="btn '+(fi.on?'':'secondary ')+'small" onclick="famInterestSet(true)">'+(fi.on?L('✓ Ativo','✓ Aktiv'):L('Ativar','Aktivieren'))+'</button>'
+    + '<button class="btn '+(fi.on?'secondary ':'')+'small" onclick="famInterestSet(false)">'+(fi.on?L('Desligar','Ausschalten'):L('✓ Desligado','✓ Ausgeschaltet'))+'</button></div>';
   if(fi.on){
     h += '<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap">'
       + [2,5,10].map(p=>'<button type="button" class="reasonchip" style="'+(fi.pct===p?'border-color:var(--ink);font-weight:800;':'')
-        + '" onclick="famPct('+p+')">+'+p+'% ao mês</button>').join('')+'</div>';
+        + '" onclick="famPct('+p+')">'+L('+'+p+'% ao mês','+'+p+'% pro Monat')+'</button>').join('')+'</div>';
     h += family.children.map(c=>{
       const b = Math.round((c.balances.defesa + c.balances.dign)*fi.pct)/100;
       return '<div class="note" style="margin:2px 0">'+c.avatar+' '+c.name+': ~'+fmt0(b)+L('/mês da sua wallet','/Monat aus Ihrer Wallet')+'</div>';
     }).join('');
-    h += '<div class="btnrow"><button class="btn secondary small" onclick="payFamInterest()"><span class="msy inl">&#xE01F;</span> pagar os juros deste mês · demo</button></div>'
-      + '<div class="note" style="margin-top:6px">No produto real: pago automaticamente todo dia 1º, da sua wallet.</div>';
+    h += '<div class="btnrow"><button class="btn secondary small" onclick="payFamInterest()"><span class="msy inl">&#xE01F;</span> '+L('pagar o bônus deste mês · demo','Bonus dieses Monats zahlen · Demo')+'</button></div>'
+      + '<div class="note" style="margin-top:6px">'+L('No produto real: pago automaticamente todo dia 1º, da sua wallet.','Im echten Produkt: automatisch am 1. jedes Monats aus Ihrer Wallet gezahlt.')+'</div>';
   }
   return h;
 }
@@ -5363,8 +5576,8 @@ function famInterestSet(on){
   family.famInterest.on = on;
   informAllChildren(on
     ? L('🌱 Novidade: seus cofrinhos Guardar e Ser livre agora TRABALHAM — todo mês rendem +'+family.famInterest.pct+'%!','🌱 Neu: deine Sparschweine Bewahren und Frei sein ARBEITEN jetzt — jeden Monat bringen sie +'+family.famInterest.pct+'%!')
-    : 'Os juros da família foram pausados pelo seu responsável.');
-  toast(on ? '🌱 Juros da família ativos.' : 'Juros da família desligados.');
+    : L('Os juros da família foram pausados por quem cuida de você.','Die Familienzinsen wurden von deinen Eltern pausiert.'));
+  toast(on ? L('🌱 Juros da família ativos.','🌱 Familienzinsen aktiv.') : L('Juros da família desligados.','Familienzinsen ausgeschaltet.'));
   render();
 }
 function famPct(p){
@@ -5381,21 +5594,22 @@ function payFamInterest(){
     total += bd + bg; return {c, bd, bg};
   });
   total = Math.round(total*100)/100;
-  if(total <= 0){ toast('Os potes ainda estão vazios — nada a render.'); return; }
+  if(total <= 0){ toast(L('Os potes ainda estão vazios — nada a render.','Die Töpfe sind noch leer — nichts zu verzinsen.')); return; }
   if(family.parentBalance < total){ toast(L('⚠️ Saldo insuficiente na sua wallet ('+fmt0(total)+'). Recarregue antes.','⚠️ Nicht genug Guthaben in Ihrer Wallet ('+fmt0(total)+'). Bitte vorher aufladen.')); return; }
   family.parentBalance -= total;
   plan.forEach(({c, bd, bg})=>{
     if(bd>0){ c.balances.defesa += bd; c.potHistory.defesa.unshift({day:'hoje', name:L('Juros da família (+'+fi.pct+'%)','Familienzinsen (+'+fi.pct+'%)'), amt:bd, icon:'🌱'}); }
     if(bg>0){ c.balances.dign += bg; c.potHistory.dign.unshift({day:'hoje', name:L('Juros da família (+'+fi.pct+'%)','Familienzinsen (+'+fi.pct+'%)'), amt:bg, icon:'🌱'}); }
     if(bd+bg>0){
-      const msg = '🌱 Seu dinheiro trabalhou dormindo: <b>+'+fmt0(Math.round((bd+bg)*100)/100)+'</b> caíram nos seus cofrinhos!';
+      const msg = L('🌱 Seu dinheiro trabalhou dormindo: <b>+'+fmt0(Math.round((bd+bg)*100)/100)+'</b> caíram nos seus cofrinhos!',
+                    '🌱 Dein Geld hat im Schlaf gearbeitet: <b>+'+fmt0(Math.round((bd+bg)*100)/100)+'</b> sind in deine Sparschweine gefallen!');
       if(curMode==='child' && c===state){ isKid() ? kSay(msg) : toast(msg.replace(/<[^>]+>/g,'')); }
       else c.cq.push(msg);
     }
   });
   informParent('🌱', L('Juros da família pagos: <b>'+fmt0(total)+'</b> ('+fi.pct+'% sobre Defesa + Dignidade de todos os filhos).','Familienzinsen ausgezahlt: <b>'+fmt0(total)+'</b> ('+fi.pct+'% auf Absicherung + Würde aller Kinder).'), null);
   confetti(6);
-  toast('🌱 '+fmt0(total)+' pagos — o hábito rendeu!');
+  toast(L('🌱 '+fmt0(total)+' pagos — o hábito rendeu!','🌱 '+fmt0(total)+' gezahlt — die Gewohnheit hat sich ausgezahlt!'));
   render(); renderBadges();
 }
 function famGoalHtml(who){
@@ -5809,9 +6023,10 @@ function openAccountSheet(which){
   html += '<div class="sh-note">Transferências SEPA para o IBAN caem direto na wallet — o dinheiro de '
     + 'aniversário vira depósito na casinha. Dados pessoais e KYC ficam na Treezor (instituição regulada, '
     + 'GDPR); fundos custodiados no grupo Société Générale. O app guarda apenas o razão 5D e as metas.</div>'
-    + '<div class="sh-note" style="margin-top:8px">ℹ️ Saldo em <b>dinheiro eletrônico</b> (Diretiva UE 2009/110): '
-    + '100% salvaguardado em conta segregada, <b>não rende juros</b> e não é depósito bancário com garantia de '
-    + 'depósitos. Na maioridade, a titularidade passa ao próprio e o acesso do responsável termina — conforme as regras do programa.</div>';
+    + '<div class="sh-note" style="margin-top:8px">'
+    + L('ℹ️ Saldo em <b>dinheiro eletrônico</b> (Diretiva UE 2009/110): mantido 100% salvaguardado em conta segregada e <b>não remunerado pelo emissor</b> — o art. 12 da diretiva veda ao emissor conceder juros ou vantagem ligada ao tempo de posse. Não é depósito bancário nem está coberto pela garantia de depósitos. Na maioridade, a titularidade passa ao próprio e o acesso do responsável termina — conforme as regras do programa e o contrato-quadro do emissor.',
+        'ℹ️ Guthaben in <b>elektronischem Geld</b> (EU-Richtlinie 2009/110): zu 100% auf einem getrennten Konto gesichert und <b>vom Emittenten nicht verzinst</b> — Art. 12 der Richtlinie untersagt dem Emittenten Zinsen oder einen an die Haltedauer gebundenen Vorteil. Es ist keine Bankeinlage und nicht von der Einlagensicherung gedeckt. Mit der Volljährigkeit geht die Inhaberschaft an die Person selbst über und der Zugriff der Eltern endet — gemäß den Programmregeln und dem Rahmenvertrag des Emittenten.')
+    + '</div>';
   showSheet(html);
 }
 // ===== ENVIAR DINHEIRO (adolescente) =====
@@ -7177,7 +7392,18 @@ function checkAutoRedeem(){
       toast('🎉 '+w.icon+L(' Objetivo alcançado! "'+w.name+'" foi resgatado sozinho para o cartão!',' Ziel erreicht! "'+w.name+'" wurde von allein auf die Karte eingelöst!'));
     });
 }
+// ---- ciclo de vida da folha ----------------------------------------------
+// Regra única: uma folha não sobrevive ao contexto em que foi aberta. Trocar de
+// perfil, trocar de aba ou trocar de idioma encerram a folha, e nada abre por
+// cima de uma folha que a pessoa abriu. Sem isso o app fica com uma janela que
+// a criança não consegue tirar da frente — foi exatamente o bug relatado.
+function sheetIsOpen(){
+  const s = document.getElementById('sheet');
+  return !!(s && s.classList.contains('on'));
+}
+let SHEET_LANG = null;   // idioma em que o conteúdo da folha foi resolvido
 function showSheet(html){
+  SHEET_LANG = LANG;
   document.getElementById('sheet').innerHTML =
     '<button class="sheet-x" onclick="closeSheet()" aria-label="'+L('fechar','schließen')+'">✕</button>' + html;
   if(curMode === 'parent') deEmojiNode(document.getElementById('sheet'));
@@ -7187,6 +7413,9 @@ function showSheet(html){
 function closeSheet(){
   document.getElementById('sheet').classList.remove('on');
   document.getElementById('sheetBg').classList.remove('on');
+  SHEET_LANG = null;
+  // o estado do quiz morre junto com a folha que o mostrava
+  try{ FOXQ = null; FOXQVIEW = null; }catch(e){}
 }
 
 // ================= MOTOR DE DECISÕES 5D =================
@@ -7249,7 +7478,7 @@ const B5_SEED = {
          org:[{day:'20 jun', pt:'Criou sozinho o combinado de Jogos & apps (€10/mês)', de:'Erstellte selbst die Vereinbarung Spiele & Apps (10 €/Monat)'}],
          gen:[{day:'28 jun', pt:'Guardou 10% na Dignidade sem ninguém pedir', de:'Legte 10% in die Würde, ohne dass jemand darum bat'}],
          renda:[{day:'5 jul', pt:'Concluiu 3 tarefas combinadas seguidas', de:'Schloss 3 vereinbarte Aufgaben in Folge ab'}],
-         seg:[{day:'9 jul', pt:'Reconheceu 1 cenário de golpe no quiz da raposa', de:'Erkannte 1 Betrugsszenario im Fuchs-Quiz'}] },
+         seg:[{day:'9 jul', pt:'Reconheceu 1 tentativa de golpe num cenário de decisão', de:'Erkannte einen Betrugsversuch in einem Entscheidungs-Szenario'}] },
     dec:[
       {id:16, m:0, day:'20 jul', kind:'spend', name:'Peça da bicicleta', icon:'🔧', amt:9, pct:19, choice:'wait', planned:true, outcome:'worth', mood:'😍'},
       {id:15, m:0, day:'16 jul', kind:'spend', name:'Sorvete na praça', icon:'🍦', amt:2.5, pct:9, choice:'now', planned:false, outcome:'ok', mood:'😐'},
@@ -8397,6 +8626,9 @@ function b5GrowthData(c){
   const low = rows[0], top = rows[rows.length-1];
   const nextStep = B5_LADDER.find(s=>s.n === (B.lvl+1));
   return {
+    // as listas cruas viajam junto com os totais: o indicador e a evidência
+    // que o gerou não podem se separar no caminho até a tela
+    spendList: spends, relevantList: relevant, goalList: dec.filter(function(d){return d.kind==='goal';}), bgList: bg,
     B: B, spends: spends.length, planned: planned, impulsive: impulsive,
     pct: spends.length ? Math.round(planned/spends.length*100) : null,
     goalsNew: goalsNew, goalsGave: goalsGave, goalsDone: goalsDone, goalsOpen: goalsOpen,
@@ -8419,11 +8651,52 @@ function b5AutonomyLine(c){
                           'Aktuelle Stufe halten. Die nächste Sprosse ist <b>'+g.nextStep.de+'</b>.');
   return L('No topo da escada — a autonomia combinada já está completa.','Ganz oben auf der Leiter — die vereinbarte Selbstständigkeit ist vollständig.');
 }
-function b5GMRow(lab, val, sub){
-  return '<div style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--grid)">'
+let _gmSeq = 0;
+// Abre e fecha a origem de um indicador. O rótulo do gatilho é reescrito no
+// idioma corrente, porque quem abre a origem pode ter trocado de idioma antes.
+function b5GMToggle(id){
+  const el = document.getElementById(id); if(!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  const c = document.getElementById(id+'_c');
+  if(c) c.textContent = open ? L('de onde vem este número ⌄','Woher kommt diese Zahl ⌄')
+                             : L('ocultar a origem ⌃','Herkunft ausblenden ⌃');
+}
+// bloco de origem: cabeçalho explicando o que a lista é, as observações e,
+// no rodapé, a conta explícita — o indicador deixa de ser um dado pronto.
+function b5GMPanel(head, lines, foot){
+  return '<div style="background:var(--page);border-radius:14px;padding:10px 12px;margin:2px 0 4px">'
+    + (head ? '<div class="note" style="margin:0 0 6px">'+head+'</div>' : '')
+    + (lines.length ? lines.join('') : '<div class="note" style="margin:0">'+L('Nada registrado ainda.','Noch nichts erfasst.')+'</div>')
+    + (foot ? '<div class="note" style="margin:8px 0 0;font-weight:800;color:var(--ink)">'+foot+'</div>' : '')
+    + '</div>';
+}
+function b5GMItem(day, txt, tag, good){
+  return '<div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45;padding:4px 0;border-top:1px solid var(--grid)">'
+    + '<div style="flex:none;width:54px;color:var(--muted);font-weight:700;font-size:11px;padding-top:2px">'+dayTR(day||'')+'</div>'
+    + '<div style="flex:1;min-width:0">'+txt+'</div>'
+    + (tag ? '<div style="flex:none;font-size:11px;font-weight:800;white-space:nowrap;color:'+(good?'#199e70':'#a8791f')+'">'+tag+'</div>' : '')
+    + '</div>';
+}
+// a escolha registrada antes da compra, na voz do responsável
+function b5GMChoice(d){
+  return ({now:L('comprou na hora','sofort gekauft'),
+           wait:L('esperou 24h','24 Std. gewartet'),
+           compare:L('comparou com um sonho','mit einem Traum verglichen'),
+           ask:L('pediu orientação','fragte um Rat')})[d.choice] || L('sem registro de escolha','keine Entscheidung erfasst');
+}
+function b5GMRow(lab, val, sub, origin){
+  const id = 'gmo'+(++_gmSeq);
+  const head = '<div style="display:flex;align-items:baseline;gap:10px;padding:9px 0 '+(origin?'4px':'9px')+'">'
     + '<div style="flex:1;font-size:13px;font-weight:700">'+lab+'</div>'
     + '<div style="font-size:15px;font-weight:800;white-space:nowrap">'+val+'</div>'
     + (sub ? '<div class="note" style="margin:0;flex:none;max-width:42%;text-align:right">'+sub+'</div>' : '')
+    + '</div>';
+  if(!origin) return '<div style="border-bottom:1px solid var(--grid)">'+head+'</div>';
+  return '<div style="border-bottom:1px solid var(--grid)">' + head
+    + '<div id="'+id+'_c" role="button" tabindex="0" style="font-size:11.5px;font-weight:800;color:var(--muted);cursor:pointer;padding:0 0 8px" onclick="b5GMToggle(\''+id+'\')">'
+    +   L('de onde vem este número ⌄','Woher kommt diese Zahl ⌄')+'</div>'
+    + '<div id="'+id+'" style="display:none;padding:0 0 10px">'+origin+'</div>'
     + '</div>';
 }
 function openGrowthMapSheet(i){
@@ -8431,6 +8704,74 @@ function openGrowthMapSheet(i){
   const g = b5GrowthData(c);
   const idx = family.children.indexOf(c);
   const pctTxt = g.pct===null ? '—' : g.pct+'%';
+  const ws = c.wishes || [];
+
+  // ---- origem de cada indicador -------------------------------------------
+  // Um número sem origem é opinião. Cada bloco abaixo devolve ao responsável
+  // as observações que produziram o indicador: dia, item, valor e a escolha
+  // que a criança fez antes de gastar. É isso que permite conversar sobre o
+  // comportamento em vez de discutir o placar.
+  const oPct = b5GMPanel(
+    L('as compras registradas e a escolha feita antes de cada uma','die erfassten Käufe und die Entscheidung vor jedem'),
+    g.spendList.slice(0, 12).map(function(d){
+      return b5GMItem(d.day, TR(d.name)+' · '+fmt0(d.amt||0)+' — '+b5GMChoice(d),
+        d.planned ? L('planejada','geplant') : L('impulso','Impuls'), d.planned);
+    }),
+    g.pct===null ? '' : L(g.pct+'% = '+g.planned+' decisões planejadas ÷ '+g.spends+' compras registradas',
+                          g.pct+'% = '+g.planned+' geplante Entscheidungen ÷ '+g.spends+' erfasste Käufe'));
+
+  const oStart = b5GMPanel(
+    L('metas que '+c.name+' abriu por conta própria','Ziele, die '+c.name+' selbst eröffnet hat'),
+    ws.filter(function(w){return w.status==='saving';}).map(function(w){
+      return b5GMItem('', TR(w.name)+' · '+fmt0(w.saved||0)+L(' de ',' von ')+fmt0(w.price||0),
+        Math.round((w.saved||0)/(w.price||1)*100)+'%', (w.saved||0)/(w.price||1) >= 0.5);
+    }).concat(g.goalList.filter(function(d){return !d.done && !d.gaveUp;}).map(function(d){
+      return b5GMItem(d.day, TR(d.name)+' · '+fmt0(d.amt||0), L('meta criada','Ziel erstellt'), true);
+    })),
+    L('cada linha é uma meta que ainda está de pé','jede Zeile ist ein Ziel, das noch steht'));
+
+  const oDone = b5GMPanel(
+    L('metas que chegaram ao fim — o dinheiro esperou até virar a coisa','Ziele, die ans Ende kamen — das Geld wartete, bis es die Sache wurde'),
+    ws.filter(function(w){return w.status==='done';}).map(function(w){
+      return b5GMItem('', TR(w.name)+' · '+fmt0(w.price||0), L('concluída','erreicht'), true);
+    }).concat(g.goalList.filter(function(d){return d.done;}).map(function(d){
+      return b5GMItem(d.day, TR(d.name)+' · '+fmt0(d.amt||0), L('concluída','erreicht'), true);
+    })), '');
+
+  const oGave = b5GMPanel(
+    L('metas abandonadas no caminho','unterwegs aufgegebene Ziele'),
+    g.goalList.filter(function(d){return d.gaveUp;}).map(function(d){
+      return b5GMItem(d.day, TR(d.name)+' · '+fmt0(d.amt||0), L('largada','losgelassen'), false);
+    }),
+    L('desistir de uma meta não é falha: mostra que o desejo mudou — vale perguntar o que mudou junto','Ein Ziel aufzugeben ist kein Fehler: Der Wunsch hat sich geändert — fragen Sie, was sich sonst noch geändert hat'));
+
+  const oWait = b5GMPanel(
+    L('só entram aqui compras que pesam 20% ou mais da mesada — abaixo disso esperar não custa nada','hier zählen nur Käufe ab 20% des Taschengelds — darunter kostet Warten nichts'),
+    g.relevantList.slice(0, 10).map(function(d){
+      const waited = d.choice==='wait' || d.choice==='compare' || d.choice==='ask';
+      return b5GMItem(d.day, TR(d.name)+' · '+fmt0(d.amt||0)+' = '+(d.pct||0)+L('% da mesada','% des Taschengelds')+' — '+b5GMChoice(d),
+        waited ? L('esperou','gewartet') : L('não esperou','nicht gewartet'), waited);
+    }),
+    L(g.waited+L(' de ',' von ')+g.relevant+' compras relevantes com pausa antes da decisão',
+      g.waited+' von '+g.relevant+' wichtigen Käufen mit Pause vor der Entscheidung'));
+
+  const oBud = b5GMPanel(
+    L('os tetos combinados e o quanto já foi usado neste mês','die vereinbarten Limits und was diesen Monat schon verbraucht ist'),
+    (g.bgList||[]).map(function(b){
+      const ok = b.spent < b.cap;
+      return b5GMItem('', TR(b.name)+' · '+fmt0(b.spent||0)+L(' de ',' von ')+fmt0(b.cap||0)
+        + (b.owner==='child' ? ' — '+L('combinado criado pela criança','vom Kind erstellt') : ''),
+        ok ? L('dentro','im Limit') : L('estourou','überschritten'), ok);
+    }),
+    L(g.budgetsOk+L(' de ',' von ')+g.budgets+' combinados respeitados',
+      g.budgetsOk+' von '+g.budgets+' Vereinbarungen eingehalten'));
+
+  const evSeg = ((g.B.ev && g.B.ev.seg) || []);
+  const oSeg = b5GMPanel(
+    L('este indicador não é contagem de acertos: é o que foi observado diante de golpes, cobranças escondidas e assinaturas','dieser Wert zählt keine richtigen Antworten: er zeigt, was bei Betrug, versteckten Abbuchungen und Abos beobachtet wurde'),
+    evSeg.slice(0, 6).map(function(e){ return b5GMItem(e.day, L(e.pt, e.de||e.pt), '', true); }),
+    L('nível atual: '+b5LvlName(g.seg),'aktuelle Stufe: '+b5LvlName(g.seg)));
+
   const bar = g.pct===null ? '' :
     '<div style="height:10px;border-radius:999px;background:#e9e6e0;overflow:hidden;margin:8px 0 4px;display:flex">'
     + '<div style="width:'+g.pct+'%;background:#199e70"></div><div style="flex:1;background:#d9b26a"></div></div>'
@@ -8447,18 +8788,18 @@ function openGrowthMapSheet(i){
     + '<div style="height:10px"></div>'
     + '<div style="font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:6px 0 2px">'
     +   L('Decisões','Entscheidungen')+'</div>'
-    + b5GMRow(L('Compras planejadas','Geplante Käufe'), pctTxt, L('de '+g.spends+' decisões','von '+g.spends+' Entscheidungen'))
+    + b5GMRow(L('Compras planejadas','Geplante Käufe'), pctTxt, L('de '+g.spends+' decisões','von '+g.spends+' Entscheidungen'), oPct)
     + bar + trend
     + '<div style="font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:16px 0 2px">'
     +   L('Metas','Ziele')+'</div>'
-    + b5GMRow(L('Iniciadas','Begonnen'), String(g.goalsNew + g.goalsOpen), L('abertas agora: '+g.goalsOpen,'jetzt offen: '+g.goalsOpen))
-    + b5GMRow(L('Concluídas','Abgeschlossen'), String(g.goalsDone), '')
-    + b5GMRow(L('Largadas no caminho','Unterwegs losgelassen'), String(g.goalsGave), L('não é fracasso: é dado','kein Scheitern: eine Information'))
+    + b5GMRow(L('Iniciadas','Begonnen'), String(g.goalsNew + g.goalsOpen), L('abertas agora: '+g.goalsOpen,'jetzt offen: '+g.goalsOpen), oStart)
+    + b5GMRow(L('Concluídas','Abgeschlossen'), String(g.goalsDone), '', oDone)
+    + b5GMRow(L('Largadas no caminho','Unterwegs losgelassen'), String(g.goalsGave), L('não é fracasso: é dado','kein Scheitern: eine Information'), oGave)
     + '<div style="font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:16px 0 2px">'
     +   L('Capacidades','Fähigkeiten')+'</div>'
-    + b5GMRow(L('Capacidade de espera','Wartefähigkeit'), g.waited+'/'+g.relevant, L('em compras relevantes','bei relevanten Käufen'))
-    + b5GMRow(L('Organização da mesada','Taschengeld-Organisation'), g.budgetsOk+'/'+g.budgets, L('combinados dentro do teto','Vereinbarungen im Limit'))
-    + b5GMRow(L('Aprendizados de segurança','Sicherheits-Lernen'), b5LvlName(g.seg), L('golpes e assinaturas','Betrug und Abos'))
+    + b5GMRow(L('Capacidade de espera','Wartefähigkeit'), g.waited+'/'+g.relevant, L('em compras relevantes','bei relevanten Käufen'), oWait)
+    + b5GMRow(L('Organização da mesada','Taschengeld-Organisation'), g.budgetsOk+'/'+g.budgets, L('combinados dentro do teto','Vereinbarungen im Limit'), oBud)
+    + b5GMRow(L('Aprendizados de segurança','Sicherheits-Lernen'), b5LvlName(g.seg), L('golpes e assinaturas','Betrug und Abos'), oSeg)
     + '<div style="background:var(--page);border-radius:16px;padding:13px 14px;margin:16px 0 2px">'
     +   '<div style="font-weight:800;font-size:14px">🪜 '+L('Nível de autonomia','Selbstständigkeits-Stufe')+'</div>'
     +   '<div class="note" style="margin:3px 0 0">'+L('hoje: ','heute: ')+'<b>'+g.lvl+'</b></div>'
@@ -8474,7 +8815,9 @@ function openGrowthMapSheet(i){
     +   '<button class="btn small" onclick="openGrowthPdf('+idx+')"><span class="msy inl">&#xE873;</span> '+L('Baixar em PDF','Als PDF laden')+'</button>'
     +   '<button class="btn secondary small" onclick="openPassportSheet('+idx+')">'+L('Diagnóstico 5D','5D-Diagnose')+'</button>'
     + '</div>'
-    + '<div class="note" style="margin:10px 2px 0">'+L('Este mapa não mostra transações: mostra decisões. É o que permite usá-lo com escolas e programas de benefício sem expor a vida financeira da família.',
+    + '<div class="note" style="margin:10px 2px 0">'+L('Cada indicador acima abre a própria origem: os comportamentos observados, com data e valor, que produziram o número. Nada aqui é estimado.',
+        'Jeder Wert oben zeigt seine eigene Herkunft: die beobachteten Verhaltensweisen mit Datum und Betrag, die die Zahl ergeben haben. Nichts davon ist geschätzt.')+'</div>'
+    + '<div class="note" style="margin:6px 2px 0">'+L('Este mapa não mostra transações: mostra decisões. É o que permite usá-lo com escolas e programas de benefício sem expor a vida financeira da família.',
         'Diese Karte zeigt keine Transaktionen, sondern Entscheidungen. Deshalb lässt sie sich mit Schulen und Benefit-Programmen nutzen, ohne das Finanzleben der Familie offenzulegen.')+'</div>');
 }
 // cartão do Diagnóstico 5D na home do responsável — logo abaixo dos tiles
@@ -8608,6 +8951,7 @@ function b5RenderCards(){
 }
 // ================= UI =================
 function setMode(m){
+  closeSheet();       // nenhuma folha atravessa a troca de perfil
   curMode = m;
   document.getElementById('viewChild').classList.toggle('hidden', m!=='child');
   document.getElementById('viewParent').classList.toggle('hidden', m!=='parent');
@@ -8693,7 +9037,7 @@ function onbGo(n){
     h += '<div class="otitle">Os combinados legais</div>'
       + '<div class="osub">Em duas línguas: a jurídica (no documento) e a humana (aqui).</div>'
       + '<div class="ocard">'
-      + '<label class="ochk" style="cursor:pointer"><input type="checkbox" class="onbA"> '+L('Contrato-quadro: sua wallet e as dos seus filhos são <b>dinheiro eletrônico</b> — 100% salvaguardado, sem juros.','Rahmenvertrag: Ihre Wallet und die Ihrer Kinder sind <b>elektronisches Geld</b> — 100% gesichert, ohne Zinsen.')+'</label>'
+      + '<label class="ochk" style="cursor:pointer"><input type="checkbox" class="onbA"> '+L('Contrato-quadro: sua wallet e as dos seus filhos são <b>dinheiro eletrônico</b> — 100% salvaguardado e não remunerado pelo emissor (Diretiva UE 2009/110, art. 12).','Rahmenvertrag: Ihre Wallet und die Ihrer Kinder sind <b>elektronisches Geld</b> — 100% gesichert und vom Emittenten nicht verzinst (EU-Richtlinie 2009/110, Art. 12).')+'</label>'
       + '<label class="ochk" style="cursor:pointer"><input type="checkbox" class="onbA"> '+L('Informação pré-contratual + <b>14 dias de retratação</b> (lei UE de serviços financeiros à distância).','Vorvertragliche Information + <b>14 Tage Widerrufsrecht</b> (EU-Recht für Finanzdienstleistungen im Fernabsatz).')+'</label>'
       + '<label class="ochk" style="cursor:pointer"><input type="checkbox" class="onbA"> '+L('Privacidade: dados do menor tratados com consentimento parental (GDPR art. 8) — e <b>a conta passa a ele aos 18</b>.','Datenschutz: Daten des Minderjährigen mit elterlicher Einwilligung verarbeitet (DSGVO Art. 8) — und <b>das Konto geht mit 18 auf ihn über</b>.')+'</label>'
       + '</div>'
@@ -8895,7 +9239,7 @@ const I18N = {
   "Capinha nova":"Neue Hülle",
   "Livro usado":"Gebrauchtes Buch",
   "Doce no shopping":"Süßigkeit im Einkaufszentrum",
-  "— 100% salvaguardado, sem juros.":"— 100% gesichert, ohne Zinsen.",
+  "— 100% salvaguardado e não remunerado pelo emissor (Diretiva UE 2009/110, art. 12).":"— 100% gesichert und vom Emittenten nicht verzinst (EU-Richtlinie 2009/110, Art. 12).",
   "— ajuste sem culpa. Frequência da fase:":"— ohne schlechtes Gewissen anpassen. Häufigkeit der Phase:",
   "— decidir com o que é finito":"— entscheiden mit dem, was begrenzt ist",
   "— investir em si e realizar sonhos":"— in sich investieren und Träume verwirklichen",
@@ -9174,7 +9518,10 @@ const I18N = {
   "Dignidade":"Würde",
   "Dinheiro":"Geld",
   "dinheiro eletrônico":"elektronisches Geld",
-  "Dinheiro eletrônico não pode render juros (lei UE). Aqui é melhor:":"Elektronisches Geld darf keine Zinsen abwerfen (EU-Recht). Hier ist es besser:",
+  "fechar":"schließen",
+  "Agora não":"Jetzt nicht",
+  "Quem paga o bônus é":"Den Bonus zahlen",
+  "Por que assim: a Diretiva UE 2009/110 (art. 12) proíbe que o":"Warum das so ist: Die EU-Richtlinie 2009/110 (Art. 12) untersagt dem",
   "Dinheiro extra":"Extrageld",
   "dinheiro investido em ativos":"in Aktiva investiertes Geld",
   "dinheiro recebido e poupança — o que entra aqui vai para as casinhas":"empfangenes Geld und Ersparnisse — was hier eingeht, geht in die Häuschen",
@@ -9966,7 +10313,7 @@ const I18N = {
   "Pay — dá para pagar com o celular!":"Pay — du kannst mit dem Handy bezahlen!",
   "Pay foi desativado no seu cartão.":"Pay wurde für deine Karte deaktiviert.",
   "(tokenização x-Pay).":"(x-Pay-Tokenisierung).",
-  "Dinheiro eletrônico não pode render juros (lei UE).":"E-Geld darf keine Zinsen abwerfen (EU-Recht).",
+  "não remunerado pelo emissor":"vom Emittenten nicht verzinst",
   "Aqui é melhor:":"Hier ist es besser:",
   "% ao mês":"% pro Monat",
   "Os juros da família foram pausados pelo seu responsável.":"Die Familienzinsen wurden von deinem Erziehungsberechtigten pausiert.",
@@ -10381,10 +10728,9 @@ function setLang(l){
   // O quiz sabe se redesenhar; qualquer outra folha aberta é fechada para não
   // sobrar uma tela meio PT meio DE.
   try{
-    const sh=document.getElementById('sheet');
-    if(sh && sh.classList.contains('on')){
-      if(FOXQ && FOXQVIEW) foxQuizRelang();
-      else closeSheet();
+    if(sheetIsOpen()){
+      if(FOXQ && FOXQVIEW) foxQuizRelang();   // o cenário sabe se redesenhar
+      else closeSheet();                      // o resto sai de cena
     }
   }catch(e){}
   _i18nAll();  // pega o que é estático e o que acabou de re-renderizar
@@ -10421,8 +10767,9 @@ parentFeed.push(
   {icon:'⭐', text:L('Ludo completou <b>"Arrumar a cama"</b> 4 dias seguidos. 🔥','Ludo hat <b>"Bett machen"</b> 4 Tage in Folge geschafft. 🔥'), unread:false, who:'Ludo'});
 selectChild(0);
 _i18nStart();
-// O quiz da raposinha aparece sozinho ao abrir o app (1x por dia). A criança responde ou fecha.
-setTimeout(function(){ try{ if(curMode==='child' && isKid()){ const f=ensureFox(); if(f.lastQuizISO!==foxTodayISO()) openFoxQuiz(); } }catch(e){} }, 2600);
+// O cenário do dia se convida sozinho ao abrir o app (1x por dia), mas só quando
+// a tela está livre. Ver foxDailyOffer().
+setTimeout(function(){ try{ foxDailyOffer(); }catch(e){} }, 2600);
 </script>
 </body>
 </html>
