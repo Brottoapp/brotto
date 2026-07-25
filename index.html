@@ -127,10 +127,13 @@
 
   /* ============ stat tiles ============ */
   .tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
-  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:13px 12px;}
+  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:13px 12px;position:relative;}
   .tile .t-k{font-size:10px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;font-weight:600;}
   .tile .t-v{font-size:17px;font-weight:750;letter-spacing:-.3px;margin-top:4px;}
   .tile .t-s{font-size:10px;color:var(--ink-2);margin-top:2px;}
+  .tile .t-k{min-height:24px;padding-right:10px;}
+  .tile .t-go{position:absolute;top:11px;right:10px;color:var(--muted);font-weight:700;font-size:13px;}
+  .tile[onclick]:active{background:var(--grid);}
   .tile .up{color:var(--good-text);font-weight:700;}
 
   /* ============ charts (linha / barras) ============ */
@@ -310,6 +313,13 @@
   .bubble .ctachip{display:inline-block;margin-top:8px;background:var(--btn);color:var(--btn-ink);
     font-size:13.5px;font-weight:800;padding:7px 13px;border-radius:999px;}
   /* dobra de card denso (progressive disclosure) */
+  .tiles2{grid-template-columns:1fr 1fr;}
+  .kidgroup{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--muted);margin:14px 0 2px;}
+  .kidrow{margin-bottom:8px;}
+  .kidav{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;
+    color:#fff;font-weight:800;font-size:14px;letter-spacing:0;text-transform:uppercase;flex:none;}
+  .kidgroup .kidav{width:19px;height:19px;font-size:10.5px;}
   .fold-h{cursor:pointer;user-select:none;}
   .fold-h .fold-arrow{float:right;color:var(--muted);font-weight:800;transition:transform .2s;}
   .fold-h.open .fold-arrow{transform:rotate(180deg);}
@@ -880,28 +890,27 @@
   <div class="ptab" id="ptab-inicio">
 
     <div id="pGuardNudge"></div>
-    <div id="pCoach"></div>
 
     <div class="card">
-      <h2>Aprovações pendentes</h2>
+      <h2>Seus filhos <span class="hint">toque para entrar</span></h2>
+      <div id="famKids"></div>
+    </div>
+
+    <div class="card">
+      <h2>Aprovações pendentes <span class="hint">de todos os filhos</span></h2>
       <div id="approvalList"></div>
     </div>
 
     <div class="card">
-      <h2>Atividade dos filhos <span class="hint">tudo, em tempo real</span></h2>
+      <h2>Atividade <span class="hint">de todos, em tempo real</span></h2>
       <div id="activityFeed"></div>
     </div>
 
-
-    <div class="tiles">
-      <div class="tile"><div class="t-k">Mesada</div><div class="t-v" id="pTileAmt">—</div><div class="t-s" id="pTileFreq">—</div></div>
-      <div class="tile"><div class="t-k">Poupança</div><div class="t-v" id="pTileSave">—</div><div class="t-s" id="pTileSaveSub">guardado pro futuro</div></div>
-      <div class="tile"><div class="t-k">Nível de poupança</div><div class="t-v" id="pTileSignal">—</div><div class="t-s" id="pTileSignalSub">—</div></div>
-    </div>
+    <div id="pCoach"></div>
 
 
     <div class="card">
-      <h2>Mesadas <span class="hint" id="pwHint">—</span></h2>
+      <h2>Carteira da família <span class="hint" id="pwHint">—</span></h2>
       <div style="display:flex;align-items:center;gap:10px">
         <div style="font-size:21px;font-weight:800;line-height:1.3" id="pwBal">—</div>
       </div>
@@ -914,26 +923,13 @@
     </div>
 
     <div class="card">
-      <h2><span class="msy inl">&#xEF97;</span> Mentor 5D <span class="hint">IA · responde só pelo livro</span></h2>
-      <div id="mentorBox"></div>
-    </div>
-
-  </div><!-- /ptab-inicio -->
-
-  <div class="ptab hidden" id="ptab-rel">
-    <div id="pGrowthMap"></div>
-    <div id="pMoneyFlow"></div>
-
-    <div class="card">
-      <h2>Ativos × Passivos <span class="hint" id="apHint">como classifica</span></h2>
-      <div id="pAtivos"></div>
+      <h2><span class="msy inl">&#xE2EB;</span> Juros da Família <span class="hint">o hábito que rende</span></h2>
+      <div id="famInterestBox"></div>
     </div>
 
     <div class="card">
-      <h2>Extrato mensal <span class="hint">Account Statements · Treezor</span></h2>
-      <div id="stmtParent"></div>
-      <div class="btnrow"><button class="btn secondary small" onclick="openReviewSheet()"><span class="msy inl">&#xEBCB;</span> Revisão do mês, a dois</button></div>
-      <div class="note">Extrato oficial gerado pela Treezor no fechamento de cada mês.</div>
+      <h2>Meta da família <span class="hint">todos remam juntos</span></h2>
+      <div id="pFamilyGoal"></div>
     </div>
 
     <div class="card" style="padding:12px">
@@ -941,11 +937,41 @@
       <div class="note" style="margin:8px 0 0">Um resumo por filho, no tom de um conselheiro, com dicas do livro pelo resultado. Dá pra baixar em PDF. Em produção sai sozinho por e-mail toda semana e no fim do mês.</div>
     </div>
 
+    <div class="card">
+      <h2><span class="msy inl">&#xEF97;</span> Mentor 5D <span class="hint">IA · responde só pelo livro</span></h2>
+      <div id="mentorBox"></div>
+    </div>
+
+  </div><!-- /ptab-inicio -->
+
+  <div class="ptab hidden" id="ptab-rel">
+    <div class="tiles tiles2">
+      <div class="tile"><div class="t-k">Poupança</div><div class="t-v" id="pTileSave">—</div><div class="t-s" id="pTileSaveSub">—</div></div>
+      <div class="tile"><div class="t-k">Nível de poupança</div><div class="t-v" id="pTileSignal">—</div><div class="t-s" id="pTileSignalSub">—</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Ativos × Passivos <span class="hint" id="apHint">como classifica</span></h2>
+      <div id="pAtivos"></div>
+    </div>
+
+    <div id="pPassport"></div>
+    <div id="pGrowthMap"></div>
+    <div id="pCoachFull"></div>
+
+    <div class="card" style="padding:12px">
+      <button class="btn" style="width:100%" onclick="openReviewSheet()"><span class="msy inl">&#xEBCB;</span> Revisão do mês, a dois</button>
+      <div class="note" style="margin:8px 0 0">O dinheiro do mês e o extrato oficial ficam na aba Conta. O relatório da família em PDF fica na aba Família.</div>
+    </div>
+
   </div><!-- /ptab-rel -->
 
   <div class="ptab hidden" id="ptab-comb">
     <div class="card">
-      <h2>Configurar mesada</h2>
+      <h2 class="fold-h" id="foldCfgH" onclick="toggleFold('Cfg')">Configurar mesada <span class="hint" id="cfgHint" style="margin-right:8px">—</span>
+        <span class="fold-arrow">▾</span></h2>
+      <div class="note" id="cfgSummary" style="margin:2px 0 0">—</div>
+      <div id="foldCfg" class="hidden"><div style="height:10px"></div>
       <div class="inline2">
         <div class="field"><label>Valor (€) <span style="font-weight:500;color:var(--muted)">· livro: ~1/ano de idade/semana</span></label>
           <input type="number" id="cfgAmount" value="20" min="1" step="0.5"></div>
@@ -970,6 +996,7 @@
         <button class="btn secondary small" onclick="openQuizSheet()"><span class="msy inl">&#xE87A;</span> Está pronto(a)?</button>
         <button class="btn secondary small" style="border-style:dashed" onclick="onbStart()"><span class="msy inl">&#xE037;</span> ver onboarding · demo</button>
       </div>
+      </div><!-- /foldCfg -->
     </div>
     <div class="card">
       <h2>Alocação combinada dos 5D <span class="hint">flexível, nunca imposta</span></h2>
@@ -988,11 +1015,6 @@
     </div>
 
     <div class="card">
-      <h2>Meta da família <span class="hint">todos remam juntos</span></h2>
-      <div id="pFamilyGoal"></div>
-    </div>
-
-    <div class="card">
       <h2 class="fold-h" id="foldTipsH" onclick="toggleFold('Tips')">Orientações do livro
         <span class="fold-arrow">▾</span></h2>
       <div class="note" style="margin:2px 0 0">3 orientações da semana, no contexto da sua família — toque para ler</div>
@@ -1001,32 +1023,20 @@
   </div><!-- /ptab-comb -->
 
   <div class="ptab hidden" id="ptab-pcartao">
+    <div id="pMoneyFlow"></div>
+
     <div class="card">
-      <h2>Cartões & carteiras <span class="hint">virtual · físico · x-Pay</span></h2>
+      <h2>Extrato mensal <span class="hint" id="stmtPHint">—</span></h2>
+      <div id="stmtParent"></div>
+    </div>
+
+    <div class="card">
+      <h2>Cartões & carteiras <span class="hint" id="pCardsHint">—</span></h2>
       <div id="pCards"></div>
     </div>
 
     <div class="card">
-      <h2><span class="msy inl">&#xE2EB;</span> Juros da Família <span class="hint">o hábito que rende</span></h2>
-      <div id="famInterestBox"></div>
-    </div>
-
-    <div class="card" id="pBenefCard">
-      <h2>Enviar dinheiro <span class="hint">para quem, até quanto</span></h2>
-      <div id="pBenef"></div>
-      <div class="note" style="margin-top:8px">Você é sempre liberado, sem limite. Pessoas cadastradas passam pela sua
-        aprovação e têm um limite por envio — acima dele, cada transferência pede seu OK. Cadastro exige SCA no seu dispositivo.</div>
-    </div>
-
-    <div class="card">
-      <h2 class="fold-h" id="foldTrvH" onclick="toggleFold('Trv')"><span class="msy inl">&#xE80B;</span> Modo viagem
-        <span class="fold-arrow">▾</span></h2>
-      <div class="note" id="trvSummary" style="margin:2px 0 0">—</div>
-      <div id="foldTrv" class="hidden"><div style="height:10px"></div><div id="travelBox"></div></div>
-    </div>
-
-    <div class="card">
-      <h2 class="fold-h" id="foldCtlH" onclick="toggleFold('Ctl')">Controles do cartão
+      <h2 class="fold-h" id="foldCtlH" onclick="toggleFold('Ctl')">Controles do cartão <span class="hint" id="ctlHint" style="margin-right:8px">—</span>
         <span class="fold-arrow">▾</span></h2>
       <div class="note" id="ctlSummary" style="margin:2px 0 0">—</div>
       <div id="foldCtl" class="hidden">
@@ -1060,11 +1070,26 @@
       <div class="note">Tudo com efeito imediato no cartão.</div>
       </div><!-- /foldCtl -->
     </div>
+
+    <div class="card">
+      <h2 class="fold-h" id="foldTrvH" onclick="toggleFold('Trv')"><span class="msy inl">&#xE80B;</span> Modo viagem <span class="hint" id="trvHint" style="margin-right:8px">—</span>
+        <span class="fold-arrow">▾</span></h2>
+      <div class="note" id="trvSummary" style="margin:2px 0 0">—</div>
+      <div id="foldTrv" class="hidden"><div style="height:10px"></div><div id="travelBox"></div></div>
+    </div>
+
+    <div class="card" id="pBenefCard">
+      <h2>Enviar dinheiro <span class="hint">para quem, até quanto</span></h2>
+      <div id="pBenef"></div>
+      <div class="note" style="margin-top:8px">Você é sempre liberado, sem limite. Pessoas cadastradas passam pela sua
+        aprovação e têm um limite por envio — acima dele, cada transferência pede seu OK. Cadastro exige SCA no seu dispositivo.</div>
+    </div>
+
   </div><!-- /ptab-pcartao -->
 
   <div class="ptab hidden" id="ptab-ptarefas">
     <div class="card">
-      <h2>Tarefas da família <span class="hint" id="ptasksHint">Pertencimento × Empreendedora</span></h2>
+      <h2>Tarefas <span class="hint" id="ptasksHint">—</span></h2>
       <div id="parentTaskList"></div>
       <div class="btnrow"><button class="btn" onclick="openTaskSheet()">＋ Criar tarefa</button></div>
       <div class="note">Pertencimento vale reconhecimento; Empreendedora paga da sua wallet ao aprovar.</div>
@@ -1074,8 +1099,8 @@
   </div><!-- /ptab-ptarefas -->
 
     <nav class="knav" id="parentNav">
-      <button id="pnav-inicio" class="active" onclick="pGo('inicio')"><span class="ni msy">&#xE88A;</span><span class="nt">Início</span></button>
-      <button id="pnav-rel" onclick="pGo('rel')"><span class="ni msy">&#xE26B;</span><span class="nt">Relatórios</span></button>
+      <button id="pnav-inicio" class="active" onclick="pGo('inicio')"><span class="ni msy">&#xE7EF;</span><span class="nt">Família</span></button>
+      <button id="pnav-rel" onclick="pGo('rel')"><span class="ni msy">&#xE26B;</span><span class="nt">Evolução</span></button>
       <button id="pnav-ptarefas" onclick="pGo('ptarefas')"><span class="ni msy">&#xE6B1;</span><span class="nt">Tarefas</span></button>
       <button id="pnav-pcartao" onclick="pGo('pcartao')"><span class="ni msy">&#xE84F;</span><span class="nt">Conta</span></button>
       <button id="pnav-comb" onclick="pGo('comb')"><span class="ni msy">&#xEBCB;</span><span class="nt">Combinado</span></button>
@@ -1600,8 +1625,10 @@ function ativosHtml(voice){   // voice: 'teen' | 'parent' | 'kid'
   const why = '<div class="note" style="margin-top:8px;text-align:left">'
     + (kid
       ? L('🛡️ Guardar e 🕊️ Ser livre <b>rendem juros</b> — o dinheiro ali é <b>ativo</b>, trabalha por você','🛡️ Bewahren und 🕊️ Frei sein <b>bringen Zinsen</b> — das Geld dort ist <b>aktiv</b> und arbeitet für dich')
-      : L('Guardar 🛡️ + Ser livre 🕊️ rendem juros — o saldo ali é <b>dinheiro investido em ativos</b>','Bewahren 🛡️ + Frei sein 🕊️ bringen Zinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>')
-        + (voice==='parent' ? L(' de ',' von ')+state.name : ''))
+      : voice==='parent'
+        ? L('Defesa 🛡️ + Dignidade 🕊️ rendem juros — o saldo ali é <b>dinheiro investido em ativos</b>','Absicherung 🛡️ + Würde 🕊️ bringen Zinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>')
+          + L(' de ',' von ')+state.name
+        : L('Guardar 🛡️ + Ser livre 🕊️ rendem juros — o saldo ali é <b>dinheiro investido em ativos</b>','Bewahren 🛡️ + Frei sein 🕊️ bringen Zinsen — der Saldo dort ist <b>in Aktiva investiertes Geld</b>'))
     + (hasBiz ? L(' (+ o lucro do negocinho)',' (+ der Gewinn des kleinen Ladens)') : '') + '.</div>';
   const nudge = sp.sem>0
     ? (kid
@@ -1963,86 +1990,43 @@ function render(){
       + '</div></div><div class="t-right">'+right+'</div></div>';
   });
 
-  // aprovações: tarefas + pedidos de compra
-  const pend = state.tasks.filter(t=>t.status==='pending');
-  const preq = state.requests.filter(r=>r.status==='pending');
+  // aprovações: tarefas + pedidos de compra — de TODOS os filhos
   const al = document.getElementById('approvalList');
-  al.innerHTML = (pend.length+preq.length)===0
-    ? '<div class="note" style="margin-top:0">'+L('Nada aguardando aprovação. 🍃','Nichts wartet auf Freigabe. 🍃')+'</div>' : '';
-  preq.forEach(r=>{
-    if(r.budgetSug){
-      al.innerHTML += '<div class="task"><span class="t-ic">'+r.icon+'</span>'
-        + '<div><div class="t-name">'+L('Sugestão: '+r.name+' '+fmt0(r.oldCap)+' → '+fmt0(r.price)+'/mês','Vorschlag: '+r.name+' '+fmt0(r.oldCap)+' → '+fmt0(r.price)+'/Monat')+'</div>'
-        + '<div class="t-sub">💬 <i>"'+r.reason+'"</i>'+L(' — palavras de ',' — Worte von ')+state.name+'</div></div>'
-        + '<div class="t-right" style="display:flex;gap:6px">'
-        + '<button class="btn small" onclick="approveReq('+r.id+')">Aceitar</button>'
-        + '<button class="btn secondary small" onclick="refuseReq('+r.id+')">Recusar</button></div></div>';
-      return;
-    }
-    if(r.lostCard){
-      al.innerHTML += '<div class="task"><span class="t-ic">😢</span>'
-        + '<div><div class="t-name">'+L(state.name+' perdeu o cartão',state.name+' hat die Karte verloren')+'</div>'
-        + '<div class="t-sub">'+L('já congelado na hora pela própria criança · confirme para destruir (lost) e reemitir','vom Kind sofort selbst gesperrt · bestätigen zum Zerstören (lost) und Neuausstellen')+'</div></div>'
-        + '<div class="t-right"><button class="btn small" onclick="approveReq('+r.id+')">Emitir novo</button></div></div>';
-      return;
-    }
-    if(r.physCard){
-      al.innerHTML += '<div class="task"><span class="t-ic">💳</span>'
-        + '<div><div class="t-name">'+L('Cartão físico para '+state.name,'Physische Karte für '+state.name)+'</div>'
-        + '<div class="t-sub">'+L('1ª via grátis','1. Ausgabe kostenlos')+' · 💬 <i>"'+r.reason+'"</i></div></div>'
-        + '<div class="t-right"><button class="btn small" onclick="approveReq('+r.id+')">Aprovar</button></div></div>';
-      return;
-    }
-    if(r.benef){
-      al.innerHTML += '<div class="task"><span class="t-ic">🧑</span>'
-        + '<div><div class="t-name">'+L(state.name+' quer cadastrar '+r.name,state.name+' möchte '+r.name+' registrieren')+'</div>'
-        + '<div class="t-sub">definir limite por envio · aprovar ou recusar</div></div>'
-        + '<div class="t-right" style="display:flex;gap:6px">'
-        + '<button class="btn small" onclick="approveReq('+r.id+')">Definir limite</button>'
-        + '<button class="btn secondary small" onclick="refuseReq('+r.id+')">Recusar</button></div></div>';
-      return;
-    }
-    if(r.transfer){
-      al.innerHTML += '<div class="task"><span class="t-ic">💸</span>'
-        + '<div><div class="t-name">'+L('Enviar '+fmt0(r.price)+' para '+r.name,fmt0(r.price)+' an '+r.name+' senden')+'</div>'
-        + '<div class="t-sub">'+L('acima do limite combinado · '+state.name+' pediu aprovação','über der vereinbarten Grenze · '+state.name+' hat Freigabe angefragt')+'</div></div>'
-        + '<div class="t-right" style="display:flex;gap:6px">'
-        + '<button class="btn small" onclick="approveReq('+r.id+')">Aprovar</button>'
-        + '<button class="btn secondary small" onclick="refuseReq('+r.id+')">Recusar</button></div></div>';
-      return;
-    }
-    const rw = r.wishId ? state.wishes.find(x=>x.id===r.wishId) : null;
-    const saved = Math.min(rw ? rw.saved : state.balances[r.pillar], r.price);
-    const early = r.early && saved < r.price;
-    al.innerHTML += '<div class="task"><span class="t-ic">'+r.icon+'</span>'
-      + '<div><div class="t-name">'+(early?L('⏰ Antecipado: ','⏰ Vorzeitig: '):L('Resgate: ','Auszahlung: '))+r.name+' · '+fmt0(r.price)+'</div>'
-      + '<div class="t-sub">'
-      + L(PILLARS.find(p=>p.key===r.pillar).name, (PILLAR_DE[r.pillar]||{}).t || PILLARS.find(p=>p.key===r.pillar).name)
-      + (early ? L(' · tem '+fmt0(saved)+' — complemento de '+fmt0(r.price-saved)+' da sua wallet',' · hat '+fmt0(saved)+' — Ergänzung von '+fmt0(r.price-saved)+' aus deiner Wallet') : '')
-      + (r.reason ? '<br>💬 <i>"'+r.reason+'"</i>'+L(' — palavras da criança',' — Worte des Kindes') : '')
-      + '</div></div>'
-      + '<div class="t-right" style="display:flex;gap:6px">'
-      + '<button class="btn small" onclick="approveReq('+r.id+')">Aprovar</button>'
-      + '<button class="btn secondary small" onclick="refuseReq('+r.id+')">Recusar</button></div></div>';
+  let _apTot = 0, _apHtml = '';
+  family.children.forEach(function(c, ci){
+    const n = c.tasks.filter(t=>t.status==='pending').length + c.requests.filter(r=>r.status==='pending').length;
+    if(!n) return;
+    _apTot += n;
+    if(family.children.length>1) _apHtml += '<div class="kidgroup">'+kidAvatar(c, ci)+'<b>'+c.name+'</b></div>';
+    _apHtml += approvalRowsHtml(c, ci);
   });
-  pend.forEach(t=>{
-    al.innerHTML += '<div class="task"><span class="t-ic">'+t.icon+'</span>'
-      + '<div><div class="t-name">'+t.name+'</div><div class="t-sub">'
-      + (t.type==='empr'?L('Empreendedora · pagar '+fmt(t.reward),'Unternehmerisch · '+fmt(t.reward)+' zahlen'):L('Pertencimento · reconhecimento','Zugehörigkeit · Anerkennung'))
-      + '</div></div><div class="t-right"><button class="btn small" onclick="approveTask('+t.id+')">Aprovar</button></div></div>';
-  });
+  al.innerHTML = _apTot===0
+    ? '<div class="note" style="margin-top:0">'+L('Nada aguardando aprovação. 🍃','Nichts wartet auf Freigabe. 🍃')+'<br>'
+      + L('Aqui chegam as tarefas que os filhos marcarem como feitas e os pedidos de compra acima do combinado.',
+          'Hier landen die Aufgaben, die die Kinder als erledigt markieren, und Kaufanfragen über der Vereinbarung.')+'</div>'
+    : _apHtml;
 
   // cartão + tiles pais
   document.getElementById('cardBal').textContent = fmt0(state.balances.despesa);
-  document.getElementById('pTileAmt').textContent = fmt0(state.allowance.amount);
-  document.getElementById('pTileFreq').textContent = state.allowance.freq+' · '+state.name;
-  const pth = document.getElementById('ptasksHint'); if(pth) pth.textContent = 'de '+state.name;
+
+  const _setHint = function(id, t){ const e = document.getElementById(id); if(e) e.textContent = t; };
+  const _ofName = L('de ','von ')+state.name;
+  _setHint('ptasksHint', _ofName);
+  _setHint('stmtPHint',  _ofName+' · Treezor');
+  _setHint('pCardsHint', _ofName+' · virtual · físico · x-Pay');
+  _setHint('trvHint',    L('cartão de ','Karte von ')+state.name);
+  _setHint('ctlHint',    L('cartão de ','Karte von ')+state.name);
+  _setHint('cfgHint',    _ofName);
+  const _phShort = [L('Primeira Infância (3–6)','Frühe Kindheit (3–6)'), L('Infância Média (7–10)','Mittlere Kindheit (7–10)'),
+                    L('Pré-Adolescência (11–13)','Präadoleszenz (11–13)'), L('Adolescência (14–18)','Adoleszenz (14–18)')];
+  _setHint('cfgSummary', fmt0(state.allowance.amount)+' · '+TR(state.allowance.freq)+' · '+(_phShort[state.phase]||''));
   // Poupança ATUAL (estoque): % do dinheiro que está guardado pro futuro agora (Desejo+Defesa+Dignidade)
   const _bal = state.balances;
   const _tot = _bal.despesa+_bal.desenv+_bal.desejo+_bal.defesa+_bal.dign;
   const _pct = _tot>0 ? Math.round((_bal.desejo+_bal.defesa+_bal.dign)/_tot*100) : null;
   document.getElementById('pTileSave').textContent = _pct==null ? '—' : _pct+'%';
-  const _saveSub=document.getElementById('pTileSaveSub'); if(_saveSub) _saveSub.textContent = L('guardado pro futuro','für später gespart');
+  const _savEur = _bal.desejo+_bal.defesa+_bal.dign;
+  const _saveSub=document.getElementById('pTileSaveSub'); if(_saveSub) _saveSub.textContent = fmt0(_savEur)+L(' guardado',' gespart');
   // Nível de poupança: classifica o % atual em Excelente / Bom / Regular / Perigoso
   const _sig=document.getElementById('pTileSignal'), _sigSub=document.getElementById('pTileSignalSub');
   let _lvl, _clr, _sub;
@@ -2056,11 +2040,11 @@ function render(){
   // tarefas da família (gestão do responsável)
   const ptl = document.getElementById('parentTaskList');
   ptl.innerHTML = state.tasks.length===0
-    ? '<div class="note" style="margin-top:0">Nenhuma tarefa criada ainda.</div>'
+    ? '<div class="note" style="margin-top:0">'+L('Nenhuma tarefa criada ainda.','Noch keine Aufgabe erstellt.')+'</div>'
     : state.tasks.map(t=>'<div class="task"><span class="t-ic">'+t.icon+'</span>'
       + '<div><div class="t-name">'+t.name+'</div><div class="t-sub">'
-      + '<span class="tag '+(t.type==='pert'?'pert">Pertencimento':'empr">Empreendedora · +'+fmt0(t.reward))+'</span>'
-      + ' · '+(recLabel(t)||'única')
+      + '<span class="tag '+(t.type==='pert'?'pert">'+L('Pertencimento','Zugehörigkeit'):'empr">'+L('Empreendedora','Unternehmerisch')+' · +'+fmt0(t.reward))+'</span>'
+      + ' · '+(recLabel(t)||L('única','einmalig'))
       + (t.recurrence==='week' && tTarget(t)>1 ? ' ('+(t.streak||0)+'/'+tTarget(t)+' 🔥)' : '')
       + (t.rewardText?' · 🎁 '+rwT(t.rewardText):'')
       + (t.status==='done'?' <span class="tag ok">feita ✓</span>':t.status==='pending'?' <span class="tag pend">aguardando você</span>':'')
@@ -2107,11 +2091,11 @@ function render(){
     document.getElementById('pwShow').textContent = L('ver saldo','Guthaben anzeigen');
   } else if(weeks >= 3){
     pwB.textContent = L('✓ Garantidas por ~'+weeks+' semanas','✓ Für ~'+weeks+' Wochen gesichert');
-    pwI.textContent = L('Dica: ative a recarga automática e nunca mais pense nisso.','Tipp: Aktivieren Sie die automatische Aufladung und denken Sie nie wieder daran.');
+    pwI.textContent = L('saldo suficiente para ~'+weeks+' semanas de mesadas','Guthaben reicht für ~'+weeks+' Wochen Taschengeld');
     document.getElementById('pwShow').textContent = L('ver saldo','Guthaben anzeigen');
   } else {
     pwB.textContent = L('⚠️ Garantidas por só '+weeks+' semana(s)','⚠️ Nur für '+weeks+' Woche(n) gesichert');
-    pwI.textContent = L('Recarregue ou ative a recarga automática para a mesada nunca falhar.','Laden Sie auf oder aktivieren Sie die automatische Aufladung, damit das Taschengeld nie ausfällt.');
+    pwI.textContent = L('menos de 3 semanas de mesadas em caixa','weniger als 3 Wochen Taschengeld in der Kasse');
     document.getElementById('pwShow').textContent = L('ver saldo','Guthaben anzeigen');
   }
   // Nudge de garantia da mesada — só aparece quando NÃO está garantida
@@ -2150,6 +2134,7 @@ function render(){
   const paEl = document.getElementById('pAtivos'); if(paEl) paEl.innerHTML = ativosHtml('parent');
   const apH = document.getElementById('apHint'); if(apH) apH.textContent = L('como '+state.name+' classifica','wie '+state.name+' klassifiziert');
   const fib = document.getElementById('famInterestBox'); if(fib) fib.innerHTML = famIntHtml();
+  const fk = document.getElementById('famKids'); if(fk) fk.innerHTML = famKidsHtml();
   const mb = document.getElementById('mentorBox'); if(mb) mb.innerHTML = mentorBoxHtml();
   const pbud = document.getElementById('pBudgets');
   if(pbud){
@@ -2342,7 +2327,7 @@ function receiveAllowance(){
     const viaCard = family.reloadMethod==='card';
     informParent('🔄', viaCard
       ? L('Recarga automática: <b>+'+fmt0(pull)+'</b> no cartão ····'+family.savedCard.last4+' (tokenizado) — o cofre estava baixo. A mesada caiu na hora.','Automatische Aufladung: <b>+'+fmt0(pull)+'</b> auf Karte ····'+family.savedCard.last4+' (tokenisiert) — der Tresor war niedrig. Das Taschengeld kam sofort an.')
-      : L('Recarga automática: <b>+'+fmt0(pull)+'</b> via débito SEPA (mandato SDD) — o cofre estava baixo. A mesada caiu na hora.','Automatische Aufladung: <b>+'+fmt0(pull)+'</b> per SEPA-Lastschrift (Mandat) — der Tresor war niedrig. Das Taschengeld kam sofort an.'));
+      : L('Recarga automática: <b>+'+fmt0(pull)+'</b> via débito SEPA (mandato SDD) — o cofre estava baixo. A mesada caiu na hora.','Automatische Aufladung: <b>+'+fmt0(pull)+'</b> per SEPA-Lastschrift (Mandat) — der Tresor war niedrig. Das Taschengeld kam sofort an.'), null);
   }
   if(family.parentBalance < amt){
     addTx('Mesada não caiu','a conta do responsável estava sem saldo', 0, '⚠️');
@@ -2698,12 +2683,22 @@ function dayTR(s){
     m=>_M_DE[_M_PT.indexOf(m.toLowerCase())]||m);
 }
 const tipIdx = {home:0, sonho:0, tarefas:0, cartao:0, negocio:0};
+let pTab = 'inicio';
 function pGo(tab){
+  pTab = tab;
   ['inicio','rel','ptarefas','pcartao','comb'].forEach(t=>{
     document.getElementById('ptab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('pnav-'+t).classList.toggle('active', t===tab);
   });
+  syncChildSelector();
   if(tab==='comb'){ bookTipIdx++; render(); }   // orientações do livro giram a cada visita
+  window.scrollTo({top:0});
+}
+// Família é a aba de todos — o seletor não teria o que fazer ali.
+function syncChildSelector(){
+  const el = document.getElementById('childSelector');
+  if(!el) return;
+  el.style.display = (curMode==='parent' && pTab!=='inicio') ? 'flex' : 'none';
 }
 let pillIdx = 0, bookTipIdx = 0;
 function tGo(tab){
@@ -3243,7 +3238,7 @@ function budgetRowHtml(b, kid){
     return '<div class="ktask" onclick="openBudgetDetail('+b.id+')" style="cursor:pointer">'
       + '<span class="ke">'+b.icon+'</span>'
       + '<div style="flex:1"><div class="kn">'+b.name+(b.owner==='parent'?' 🤝':'')+'</div>'
-      + '<div class="ks">'+fmt0(b.spent)+' de '+fmt0(b.cap)+' · '+stat+'</div>'
+      + '<div class="ks">'+fmt0(b.spent)+L(' de ',' von ')+fmt0(b.cap)+' · '+stat+'</div>'
       + '<div class="hb-track" style="margin-top:7px"><div class="hb-fill" style="width:'+pct
       + '%;background:'+(pct>=100?'#d03b3b':'var(--progress)')+'"></div></div></div>'
       + '<span style="font-weight:800;font-size:20px;color:var(--muted)">›</span></div>';
@@ -3252,7 +3247,7 @@ function budgetRowHtml(b, kid){
     + '<div class="hb-top" style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">'
     + '<b>'+b.icon+' '+b.name+(b.owner==='parent'?' 🔒':'')
     + (b.locked?' · travado 🔐':(b.hard?' · trava':' · avisa'))+'</b>'
-    + '<span>'+fmt0(b.spent)+' de '+fmt0(b.cap)+' ›</span></div>'
+    + '<span>'+fmt0(b.spent)+L(' de ',' von ')+fmt0(b.cap)+' ›</span></div>'
     + '<div class="hb-track"><div class="hb-fill" style="width:'+pct+'%;background:'+(pct>=100?'#d03b3b':'var(--progress)')+'"></div></div></div>';
 }
 // orçamento inline na aba Orçamento (adolescente)
@@ -3603,7 +3598,7 @@ function raAmtChanged(v){
   const note = document.getElementById('raNote'); if(!note) return;
   note.innerHTML = (isKid()
       ? L('Saem '+fmt0(v)+' de '+jarName(from)+' e entram em '+jarName(to)+'.', fmt0(v)+' gehen von '+jarName(from)+' nach '+jarName(to)+'.')
-      : fmt0(v)+' de '+jarName(from)+' → '+jarName(to)+'.')
+      : fmt0(v)+L(' de ',' von ')+jarName(from)+' → '+jarName(to)+'.')
     + (to==='dign'   ? L(' 🕊️ Fortalecer a liberdade — bela escolha.',' 🕊️ Die Freiheit stärken — schöne Wahl.') : '')
     + (to==='defesa' ? L(' 🛡️ Reforçar a reserva.',' 🛡️ Die Rücklage stärken.') : '')
     + (to==='despesa'? L(' 💳 Vira dinheiro pra gastar agora.',' 💳 Wird zu Geld zum Ausgeben.') : '');
@@ -4557,7 +4552,7 @@ function fundChildByCard(){
 function fundByCard(){
   closeSheet();
   family.parentBalance += 50;
-  informParent('💳', L('Recarga de <b>+€50</b> na sua wallet via cartão (3DS confirmado).','Aufladung von <b>+€50</b> auf deine Wallet per Karte (3DS bestätigt).'));
+  informParent('💳', L('Recarga de <b>+€50</b> na sua wallet via cartão (3DS confirmado).','Aufladung von <b>+€50</b> auf deine Wallet per Karte (3DS bestätigt).'), null);
   toast('💳 +€50 na sua wallet — caiu na hora.');
   render();
 }
@@ -4585,18 +4580,141 @@ function showStandingOrder(){
   showSheet(html);
 }
 
+// A porta de entrada de cada filho. Tocar aqui é o gesto que troca a escala:
+// escolhe o filho E leva para a aba onde ele é o assunto.
+const KIDAV = ['#2f6d4f','#8a5a2b','#3d5a8a','#7a3f6d','#8a6d1f'];
+function kidAvatar(c, i){
+  return '<span class="kidav" style="background:'+KIDAV[i % KIDAV.length]+'">'
+    + (c.name||'?').trim().charAt(0) + '</span>';
+}
+function famKidsHtml(){
+  if(curMode !== 'parent') return '';
+  return family.children.map(function(c, i){
+    const b = c.balances;
+    const tot = b.despesa+b.desenv+b.desejo+b.defesa+b.dign;
+    const pend = c.tasks.filter(t=>t.status==='pending').length + c.requests.filter(r=>r.status==='pending').length;
+    return '<button type="button" class="actrow kidrow" onclick="selectChild('+i+');pGo(\'rel\')">'
+      + '<span class="ar-e">'+kidAvatar(c, i)+'</span>'
+      + '<span class="ar-t">'+c.name
+      + '<div class="note" style="margin:2px 0 0;font-weight:600">'+fmt0(tot)+L(' no total · ',' insgesamt · ')
+      + (pend ? L(pend+' esperando você', pend+' wartet auf Sie') : L('nada pendente','nichts offen'))
+      + '</div></span><span class="ar-c">›</span></button>';
+  }).join('')
+  + '<div class="btnrow"><button class="btn secondary small" onclick="openAddChildSheet()">＋ '+L('filho(a)','Kind')+'</button></div>';
+}
+// O Coach na aba Família mostra UMA orientação por filho — o resto do coach
+// (todas as orientações do filho selecionado) mora na aba Evolução.
+function pCoachFamHtml(){
+  if(curMode !== 'parent') return '';
+  let h = '<div class="card"><h2>🧭 '+L('Coach dos pais','Eltern-Coach')+' <span class="hint">'
+    + L('o que fazer esta semana','was diese Woche zu tun ist')+'</span></h2>';
+  let any = false;
+  family.children.forEach(function(c, i){
+    const items = b5Coach(c);
+    if(!items || !items.length) return;
+    any = true;
+    const it = items[0];
+    h += '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--grid)">'
+      + kidAvatar(c, i)
+      + '<div style="flex:1"><div style="font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">'+c.name+'</div>'
+      + '<div style="font-size:13.5px;line-height:1.55">'+L(it.pt, it.de)+'</div>'
+      + '<div class="btnrow"><button class="btn secondary small" onclick="selectChild('+i+');'+it.act+'">'+L(it.cpt, it.cde)+'</button>'
+      + '<button class="btn secondary small" onclick="selectChild('+i+');pGo(\'rel\')">'+L('tudo de '+c.name,'alles zu '+c.name)+'</button></div>'
+      + '</div></div>';
+  });
+  if(!any) return '';
+  return h + '<div class="note" style="margin:10px 0 0">'
+    + L('Baseado no comportamento observado de cada filho — não em médias de outras famílias.',
+        'Basierend auf dem beobachteten Verhalten jedes Kindes — nicht auf Durchschnitten anderer Familien.')
+    + '</div></div>';
+}
+// uma linha de aprovação é sempre de UM filho; agir nela seleciona esse filho,
+// para que o resto do painel acompanhe o que você acabou de fazer.
+function approvalRowsHtml(c, ci){
+  const pend = c.tasks.filter(t=>t.status==='pending');
+  const preq = c.requests.filter(r=>r.status==='pending');
+  let out = '';
+  preq.forEach(r=>{
+    if(r.budgetSug){
+      out += '<div class="task"><span class="t-ic">'+r.icon+'</span>'
+        + '<div><div class="t-name">'+L('Sugestão: '+r.name+' '+fmt0(r.oldCap)+' → '+fmt0(r.price)+'/mês','Vorschlag: '+r.name+' '+fmt0(r.oldCap)+' → '+fmt0(r.price)+'/Monat')+'</div>'
+        + '<div class="t-sub">💬 <i>"'+r.reason+'"</i>'+L(' — palavras de ',' — Worte von ')+c.name+'</div></div>'
+        + '<div class="t-right" style="display:flex;gap:6px">'
+        + '<button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Aceitar</button>'
+        + '<button class="btn secondary small" onclick="pApp('+ci+',1,'+r.id+')">Recusar</button></div></div>';
+      return;
+    }
+    if(r.lostCard){
+      out += '<div class="task"><span class="t-ic">😢</span>'
+        + '<div><div class="t-name">'+L(c.name+' perdeu o cartão',c.name+' hat die Karte verloren')+'</div>'
+        + '<div class="t-sub">'+L('já congelado na hora pela própria criança · confirme para destruir (lost) e reemitir','vom Kind sofort selbst gesperrt · bestätigen zum Zerstören (lost) und Neuausstellen')+'</div></div>'
+        + '<div class="t-right"><button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Emitir novo</button></div></div>';
+      return;
+    }
+    if(r.physCard){
+      out += '<div class="task"><span class="t-ic">💳</span>'
+        + '<div><div class="t-name">'+L('Cartão físico para '+c.name,'Physische Karte für '+c.name)+'</div>'
+        + '<div class="t-sub">'+L('1ª via grátis','1. Ausgabe kostenlos')+' · 💬 <i>"'+r.reason+'"</i></div></div>'
+        + '<div class="t-right"><button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Aprovar</button></div></div>';
+      return;
+    }
+    if(r.benef){
+      out += '<div class="task"><span class="t-ic">🧑</span>'
+        + '<div><div class="t-name">'+L(c.name+' quer cadastrar '+r.name,c.name+' möchte '+r.name+' registrieren')+'</div>'
+        + '<div class="t-sub">definir limite por envio · aprovar ou recusar</div></div>'
+        + '<div class="t-right" style="display:flex;gap:6px">'
+        + '<button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Definir limite</button>'
+        + '<button class="btn secondary small" onclick="pApp('+ci+',1,'+r.id+')">Recusar</button></div></div>';
+      return;
+    }
+    if(r.transfer){
+      out += '<div class="task"><span class="t-ic">💸</span>'
+        + '<div><div class="t-name">'+L('Enviar '+fmt0(r.price)+' para '+r.name,fmt0(r.price)+' an '+r.name+' senden')+'</div>'
+        + '<div class="t-sub">'+L('acima do limite combinado · '+c.name+' pediu aprovação','über der vereinbarten Grenze · '+c.name+' hat Freigabe angefragt')+'</div></div>'
+        + '<div class="t-right" style="display:flex;gap:6px">'
+        + '<button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Aprovar</button>'
+        + '<button class="btn secondary small" onclick="pApp('+ci+',1,'+r.id+')">Recusar</button></div></div>';
+      return;
+    }
+    const rw = r.wishId ? c.wishes.find(x=>x.id===r.wishId) : null;
+    const saved = Math.min(rw ? rw.saved : c.balances[r.pillar], r.price);
+    const early = r.early && saved < r.price;
+    out += '<div class="task"><span class="t-ic">'+r.icon+'</span>'
+      + '<div><div class="t-name">'+(early?L('⏰ Antecipado: ','⏰ Vorzeitig: '):L('Resgate: ','Auszahlung: '))+r.name+' · '+fmt0(r.price)+'</div>'
+      + '<div class="t-sub">'
+      + L(PILLARS.find(p=>p.key===r.pillar).name, (PILLAR_DE[r.pillar]||{}).t || PILLARS.find(p=>p.key===r.pillar).name)
+      + (early ? L(' · tem '+fmt0(saved)+' — complemento de '+fmt0(r.price-saved)+' da sua wallet',' · hat '+fmt0(saved)+' — Ergänzung von '+fmt0(r.price-saved)+' aus deiner Wallet') : '')
+      + (r.reason ? '<br>💬 <i>"'+r.reason+'"</i>'+L(' — palavras da criança',' — Worte des Kindes') : '')
+      + '</div></div>'
+      + '<div class="t-right" style="display:flex;gap:6px">'
+      + '<button class="btn small" onclick="pApp('+ci+',0,'+r.id+')">Aprovar</button>'
+      + '<button class="btn secondary small" onclick="pApp('+ci+',1,'+r.id+')">Recusar</button></div></div>';
+  });
+  pend.forEach(t=>{
+    out += '<div class="task"><span class="t-ic">'+t.icon+'</span>'
+      + '<div><div class="t-name">'+t.name+'</div><div class="t-sub">'
+      + (t.type==='empr'?L('Empreendedora · pagar '+fmt(t.reward),'Unternehmerisch · '+fmt(t.reward)+' zahlen'):L('Pertencimento · reconhecimento','Zugehörigkeit · Anerkennung'))
+      + '</div></div><div class="t-right"><button class="btn small" onclick="pApp('+ci+',2,'+t.id+')">Aprovar</button></div></div>';
+  });
+  return out;
+}
+function pApp(ci, k, id){
+  if(family.cur!==ci) selectChild(ci);
+  (k===0?approveReq:k===1?refuseReq:approveTask)(id);
+}
 // ---- múltiplos filhos: cada um é um physical user com wallets e cartão próprios ----
 function renderChildSelector(){
   // Seletor de filhos existe SÓ no app do responsável — cada criança só vê a si
   // mesma (no demo: escolha o filho aqui e alterne para "Criança" para ver o app dele).
   const el = document.getElementById('childSelector');
-  if(curMode!=='parent'){ el.innerHTML=''; return; }
+  if(curMode!=='parent'){ el.innerHTML=''; syncChildSelector(); return; }
   el.innerHTML = family.children.map((c,i)=>
     '<button type="button" class="reasonchip'+(i===family.cur?' sel':'')+'" onclick="selectChild('+i+')">'
     + c.avatar+' '+c.name
     + (c.requests.filter(r=>r.status==='pending').length + c.tasks.filter(t=>t.status==='pending').length > 0 && curMode==='parent' ? ' 🔔' : '')
     + '</button>').join('')
     + (curMode==='parent' ? '<button type="button" class="reasonchip" onclick="openAddChildSheet()">＋ filho</button>' : '');
+  syncChildSelector();
 }
 const CARD_DESIGNS = {
   classic:{bg:'#111', name:'Clássico', e:'⬛'},
@@ -4666,7 +4784,7 @@ function createChildProfile(){
   });
   closeSheet();
   confetti(10);
-  informParent('👶', L('Perfil de <b>'+name+'</b> criado — KYC enviado (Documents), wallets e cartão em emissão.','Profil <b>'+name+'</b> erstellt — KYC eingereicht (Documents), Wallets und Karte werden ausgestellt.'));
+  informParent('👶', L('Perfil de <b>'+name+'</b> criado — KYC enviado (Documents), wallets e cartão em emissão.','Profil <b>'+name+'</b> erstellt — KYC eingereicht (Documents), Wallets und Karte werden ausgestellt.'), name);
   toast('👶 '+name+' entrou para a família! Onboarding Treezor iniciado.');
   selectChild(family.children.length-1);
 }
@@ -5076,12 +5194,12 @@ const MENTOR_ACCOUNT = {
   teen: 'Eu não vejo sua conta — nenhuma IA aqui vê, é assim por segurança. Mas é fácil: seu saldo está na tela '
     + 'Início (a rosquinha dos 5 pilares), o extrato está em Cartão, e qualquer coisa estranha, fala com seu responsável. 😉',
   parent: 'Eu não tenho acesso a contas, saldos ou cartões — por desenho de segurança. Tudo isso está nas abas do app: '
-    + 'saldos em Início, extratos em Relatórios, controles do cartão em Cartão. Se algo parece errado na conta, '
+    + 'saldos em Família, extratos em Conta, evolução do filho em Evolução. Se algo parece errado na conta, '
     + 'o caminho é o suporte humano, não o Mentor.',
   teen_de: 'Ich sehe dein Konto nicht — keine KI hier sieht es, das ist so aus Sicherheit. Aber es ist leicht: Dein Guthaben steht auf dem '
     + 'Start-Bildschirm (der Donut der 5 Säulen), der Kontoauszug ist unter Karte, und bei irgendetwas Komischem sprich mit deinen Eltern. 😉',
   parent_de: 'Ich habe keinen Zugriff auf Konten, Guthaben oder Karten — aus Sicherheitsgründen. Das alles steht in den Tabs der App: '
-    + 'Guthaben unter Start, Kontoauszüge unter Berichte, Kartensteuerung unter Karte. Wenn etwas am Konto falsch scheint, '
+    + 'Guthaben unter Familie, Kontoauszüge unter Konto, Entwicklung des Kindes unter Entwicklung. Wenn etwas am Konto falsch scheint, '
     + 'ist der Weg der menschliche Support, nicht der Mentor.',
 };
 const MENTOR_SENSITIVE = {
@@ -5120,7 +5238,8 @@ function mPick(o, who){ if(LANG==='de'){ return o[who+'_de'] || o.parent_de || o
 function mSugg(who){ return MENTOR_SUGG[LANG==='de'?who+'_de':who] || MENTOR_SUGG[who] || MENTOR_SUGG.parent; }
 family.mentor = { teenEnabled:true, logs:{parent:[], teen:[]} };
 function mentorBoxHtml(){
-  const teen = family.children.find(c=>c.phase>=2);
+  const _msel = family.children[family.cur];
+  const teen = (_msel && _msel.phase>=2) ? _msel : null;
   return '<div class="note" style="margin:0 0 10px">'+L('Tire dúvidas com a voz do livro. A IA não tem acesso a contas, saldos ou dados — só ao conteúdo de <b>O Poder da Mesada</b>.','Stell Fragen mit der Stimme des Buches. Die KI hat keinen Zugriff auf Konten, Guthaben oder Daten — nur auf den Inhalt von <b>O Poder da Mesada</b>.')+'</div>'
     + '<div class="btnrow" style="margin-top:0"><button class="btn small" onclick="openMentorSheet(\'parent\')"><span class="msy inl">&#xE0B7;</span> '+L('Conversar com o Mentor','Mit dem Mentor sprechen')+'</button></div>'
     + (teen ? '<div class="statusrow" style="margin-top:10px"><div>'
@@ -5133,7 +5252,8 @@ function mentorBoxHtml(){
 }
 function mentorConsent(){
   family.mentor.teenEnabled = !family.mentor.teenEnabled;
-  const teen = family.children.find(c=>c.phase>=2);
+  const _msel = family.children[family.cur];
+  const teen = (_msel && _msel.phase>=2) ? _msel : null;
   if(teen){ const msg = family.mentor.teenEnabled
     ? L('💬 Seu responsável liberou o Mentor 5D para você — pergunte o que quiser sobre o livro. (Ele pode ver a conversa.)','💬 Deine Eltern haben den 5D-Mentor für dich freigeschaltet — frag alles zum Buch. (Sie können das Gespräch sehen.)')
     : L('O Mentor 5D foi desligado pelo seu responsável.','Der 5D-Mentor wurde von deinen Eltern ausgeschaltet.');
@@ -5208,7 +5328,8 @@ function askMentor(who, txt){
   openMentorSheet(who);
 }
 function openMentorLogSheet(){
-  const teen = family.children.find(c=>c.phase>=2);
+  const _msel = family.children[family.cur];
+  const teen = (_msel && _msel.phase>=2) ? _msel : null;
   showSheet('<div class="grab"></div><div class="sh-emoji msy">&#xE8F4;</div>'
     + '<div class="sh-title">'+L('Conversa de '+(teen?teen.name:'—')+' com o Mentor','Gespräch von '+(teen?teen.name:'—')+' mit dem Mentor')+'</div>'
     + '<div class="sh-sub">'+L('Transparência total — como tudo neste app. Use para conversar, não para vigiar em silêncio. 💛','Volle Transparenz — wie alles in dieser App. Nutze es zum Reden, nicht zum stillen Überwachen. 💛')+'</div>'
@@ -5217,9 +5338,10 @@ function openMentorLogSheet(){
 }
 function famIntHtml(){
   const fi = family.famInterest;
-  let h = '<div class="note" style="margin:0 0 10px">Dinheiro eletrônico não pode render juros (lei UE). '
-    + 'Aqui é melhor: <b>você</b> paga um bônus mensal sobre o que ficar em <b>Guardar</b> e '
-    + '<b>Ser livre</b> — mesada extra que ensina juros compostos de verdade.</div>';
+  let h = '<div class="note" style="margin:0 0 10px">'
+    + L('Dinheiro eletrônico não pode render juros (lei UE). Aqui é melhor: <b>você</b> paga um bônus mensal sobre o que ficar em <b>Defesa</b> e <b>Dignidade</b> — mesada extra que ensina juros compostos de verdade.',
+        'E-Geld darf keine Zinsen abwerfen (EU-Recht). Hier ist es besser: <b>Sie</b> zahlen einen monatlichen Bonus auf das, was in <b>Absicherung</b> und <b>Würde</b> bleibt — zusätzliches Taschengeld, das echten Zinseszins lehrt.')
+    + '</div>';
   h += '<div class="btnrow" style="margin-top:0">'
     + '<button class="btn '+(fi.on?'':'secondary ')+'small" onclick="famInterestSet(true)">'+(fi.on?'✓ Ativo':'Ativar')+'</button>'
     + '<button class="btn '+(fi.on?'secondary ':'')+'small" onclick="famInterestSet(false)">'+(fi.on?'Desligar':'✓ Desligado')+'</button></div>';
@@ -5271,7 +5393,7 @@ function payFamInterest(){
       else c.cq.push(msg);
     }
   });
-  informParent('🌱', L('Juros da família pagos: <b>'+fmt0(total)+'</b> ('+fi.pct+'% sobre Guardar + Ser livre de todos os filhos).','Familienzinsen ausgezahlt: <b>'+fmt0(total)+'</b> ('+fi.pct+'% auf Sparen + Frei sein aller Kinder).'));
+  informParent('🌱', L('Juros da família pagos: <b>'+fmt0(total)+'</b> ('+fi.pct+'% sobre Defesa + Dignidade de todos os filhos).','Familienzinsen ausgezahlt: <b>'+fmt0(total)+'</b> ('+fi.pct+'% auf Absicherung + Würde aller Kinder).'), null);
   confetti(6);
   toast('🌱 '+fmt0(total)+' pagos — o hábito rendeu!');
   render(); renderBadges();
@@ -5291,7 +5413,7 @@ function famGoalHtml(who){
   return '<div class="'+(who==='kid'?'kcard':'card')+'" style="margin-top:12px">'
     + (who==='kid' ? '<div class="klabel" style="text-align:left;margin-bottom:8px">'+L('sonho da família '+g.icon,'Familientraum '+g.icon)+'</div>' : '')
     + '<div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:'+(who==='kid'?'16px':'14px')+'">'
-    + g.icon+' '+g.name+'</b><span style="margin-left:auto;font-weight:800">'+fmt0(g.saved)+' de '+fmt0(g.price)+'</span></div>'
+    + g.icon+' '+g.name+'</b><span style="margin-left:auto;font-weight:800">'+fmt0(g.saved)+L(' de ',' von ')+fmt0(g.price)+'</span></div>'
     + '<div class="hb-track" style="margin:8px 0"><div class="hb-fill" style="width:'+pct+'%;background:var(--progress)"></div></div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+chips+'</div>'
     + (pct>=100 ? '<div style="text-align:center;font-weight:800;font-size:15px">Conseguimos! 🎉 Hora de viver esse sonho juntos.</div>' : btn)
@@ -6778,8 +6900,9 @@ function sanitizeParent(){
   const onbEl = document.getElementById('onb');
   if(onbEl && !onbEl.classList.contains('hidden')) deEmojiNode(onbEl);
 }
-function informParent(icon, text){
-  parentFeed.unshift({icon, text, unread: curMode!=='parent', who: (state&&state.name)||null});
+function informParent(icon, text, who){
+  const _w = arguments.length>2 ? who : ((state&&state.name)||null);
+  parentFeed.unshift({icon, text, unread: curMode!=='parent', who: _w});
   parentFeed.splice(200);   // histórico real; o card do Início mostra só as últimas
   if(curMode!=='parent') parentUnread++;
   renderBadges(); renderActivityFeed();
@@ -6827,16 +6950,17 @@ function renderActivityFeed(){
 }
 // histórico completo, com filtro por filho — a casa do "tudo"
 let actFilter = 'Todos';
-function openActivitySheet(){
+function openActivitySheet(keep){
+  if(!keep) actFilter = 'Todos';
   const names = family.children.map(c=>c.name);
   const chips = ['Todos'].concat(names);
   const list = parentFeed.filter(e=> actFilter==='Todos' || e.who===actFilter || !e.who);
   let html = '<div class="grab"></div>'
     + '<div class="sh-title">'+L('Atividade dos filhos','Aktivität der Kinder')+'</div>'
-    + '<div class="sh-sub">'+L('Tudo o que aconteceu, em ordem — do mais novo ao mais antigo.','Alles, was passiert ist, der Reihe nach — vom Neuesten zum Ältesten.')+'</div>'
+    + '<div class="sh-sub">'+L('Tudo o que aconteceu com todos os filhos, em ordem — do mais novo ao mais antigo.','Alles, was mit allen Kindern passiert ist, der Reihe nach — vom Neuesten zum Ältesten.')+'</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
     + chips.map(cp=>'<button type="button" class="reasonchip" style="'+(actFilter===cp?'border-color:var(--ink);font-weight:800;':'')
-      + '" onclick="actFilter=\''+cp+'\';openActivitySheet()">'+(cp==='Todos'?L('Todos','Alle'):cp)+'</button>').join('')+'</div>'
+      + '" onclick="actFilter=\''+cp+'\';openActivitySheet(1)">'+(cp==='Todos'?L('Todos','Alle'):cp)+'</button>').join('')+'</div>'
     + (list.length ? list.map(actRowHtml).join('')
         : '<div class="note">'+L('Nada de '+actFilter+' por aqui ainda.','Von '+actFilter+' gibt es hier noch nichts.')+'</div>');
   showSheet(html);
@@ -7117,6 +7241,9 @@ function b5Day(){ const d=new Date();
 // ---- estado por criança (lazy: os literais LUDO/ALICE ficam intactos) ----
 const B5_SEED = {
   Ludo: { sc:{plan:52, imp:38, prio:45, valor:40, org:58, seg:30, gen:62, renda:48}, lvl:1,
+    diag:{done:true, at:'9 jul', top:'gen', low:'seg', answers:{},
+          text:{pt:'Ludo está avançando em generosidade e impacto, mas ainda precisa de ajuda para reconhecer golpes e cobranças escondidas.',
+                de:'Ludo macht Fortschritte bei Großzügigkeit, braucht aber noch Hilfe dabei, Betrug und versteckte Abbuchungen zu erkennen.'}},
     ev:{ plan:[{day:'2 jun', pt:'Manteve o sonho da bicicleta por 8 semanas seguidas', de:'Hielt den Fahrrad-Traum 8 Wochen durch'}],
          imp:[{day:'14 jun', pt:'Esperou ou comparou antes de 4 de 6 compras relevantes', de:'Wartete oder verglich vor 4 von 6 wichtigen Käufen'}],
          org:[{day:'20 jun', pt:'Criou sozinho o combinado de Jogos & apps (€10/mês)', de:'Erstellte selbst die Vereinbarung Spiele & Apps (10 €/Monat)'}],
@@ -7179,7 +7306,7 @@ function ensureB5(c){
     waiting: [],      // compras em espera de 24h
     pending: [],      // reflexões pendentes ("valeu o que custou?")
     offer: null,      // degrau da escada aguardando liberação do responsável
-    diag: {done:false},
+    diag: (seed && seed.diag) ? JSON.parse(JSON.stringify(seed.diag)) : {done:false},
   };
   if(seed){ // degraus já conquistados no histórico da demo
     for(let i=1;i<=c.b5.lvl;i++){ const st=B5_LADDER[i-1]; if(st && st.n===2) c.b5.grants.ownBudget=true; if(st && st.n===3) c.b5.grants.selfPause=true; }
@@ -7644,7 +7771,7 @@ function openMomentSheet(id){
     + '<div class="sh-title">'+L(def.title.pt, def.title.de)+'</div>'
     + '<div style="background:var(--page);border-radius:14px;padding:12px 14px;margin:10px 0 14px;font-size:13.5px;line-height:1.5">'+L(def.q.pt, def.q.de)+'</div>'
     + btns
-    + '<div class="note" style="margin:2px 2px 0;text-align:center">'+L('Sua resposta vira evidência no seu Passaporte 5D.','Deine Antwort wird zum Nachweis in deinem 5D-Pass.')+'</div>');
+    + '<div class="note" style="margin:2px 2px 0;text-align:center">'+L('Sua resposta vira evidência no seu Diagnóstico 5D.','Deine Antwort wird zum Nachweis in deiner 5D-Diagnose.')+'</div>');
 }
 function b5Answer(id, i){
   const c = state, B = ensureB5(c);
@@ -7654,7 +7781,7 @@ function b5Answer(id, i){
   closeSheet();
   b5Ev(c, o.sk, o.dv, o.ev.pt, o.ev.de);
   const s = b5Skill(o.sk);
-  toast(L(s.ic+' Anotado no seu Passaporte: '+s.pt.toLowerCase()+'.', s.ic+' In deinem Pass notiert: '+s.de+'.'));
+  toast(L(s.ic+' Anotado no seu Diagnóstico: '+s.pt.toLowerCase()+'.', s.ic+' In deiner Diagnose notiert: '+s.de+'.'));
   render();
 }
 
@@ -7987,8 +8114,8 @@ function b5DiagFinish(){
   B.diag = {done:true, band:band, at:b5Day(), answers:b5DiagAns, top:top, low:low, text:text};
   closeSheet();
   confetti(10);
-  informParent('🧭', L('O ponto de partida de '+c.name+' está pronto: <b>'+text.pt+'</b> Veja o Passaporte 5D para as evidências e o próximo passo.',
-                       'Der Ausgangspunkt von '+c.name+' ist fertig: <b>'+text.de+'</b> Sehen Sie den 5D-Pass für Nachweise und den nächsten Schritt.'));
+  informParent('🧭', L('O ponto de partida de '+c.name+' está pronto: <b>'+text.pt+'</b> Veja o Diagnóstico 5D para as evidências e o próximo passo.',
+                       'Der Ausgangspunkt von '+c.name+' ist fertig: <b>'+text.de+'</b> Sehen Sie die 5D-Diagnose für Nachweise und den nächsten Schritt.'));
   b5CheckLadder(c);
   render();
   setTimeout(()=>b5DiagResult(c), 250);
@@ -8011,7 +8138,7 @@ function b5DiagResult(who){
     + rows
     + '<div class="note" style="margin:12px 2px 14px">'+L('Isto não é uma nota: é uma fotografia de hoje. Cada decisão real que '+c.name+' tomar daqui para frente muda esse retrato.',
         'Das ist keine Note, sondern eine Momentaufnahme von heute. Jede echte Entscheidung von '+c.name+' verändert dieses Bild.')+'</div>'
-    + '<button class="btn" style="width:100%" onclick="openPassportSheet()">'+L('Ver o Passaporte 5D','Den 5D-Pass ansehen')+'</button>');
+    + '<button class="btn" style="width:100%" onclick="openPassportSheet()">'+L('Ver o Diagnóstico 5D','Die 5D-Diagnose ansehen')+'</button>');
 }
 function b5DiagCardHtml(kid){
   const B = b5(); if(B.diag && B.diag.done) return '';
@@ -8023,7 +8150,7 @@ function b5DiagCardHtml(kid){
 }
 
 // ================= MOTOR 5D · PEÇA F ==============================
-// Passaporte de Competências 5D + Escada de Autonomia.
+// Diagnóstico de Competências 5D + Escada de Autonomia.
 // Regra do produto: o painel mostra EVIDÊNCIA OBSERVADA e PRÓXIMO PASSO.
 // A barra existe só para dar noção de trajetória — nunca é "nota".
 // ------------------------------------------------------------------
@@ -8111,8 +8238,8 @@ function openPassportSheet(i){
           'In den letzten drei Monaten '+(parentView?('ist '+c.name):'bist du')+' von <b>'+tr.from+'%</b> auf <b>'+tr.to+'%</b> geplanter Käufe '+(parentView?'gekommen':'gekommen')+'.')
       + '</div></div>'
     : '';
-  showSheet('<div class="grab"></div><div class="sh-emoji">🛂</div>'
-    + '<div class="sh-title">'+L('Passaporte 5D','5D-Pass')+(parentView?' · '+c.name:'')+'</div>'
+  showSheet('<div class="grab"></div><div class="sh-emoji">🌱</div>'
+    + '<div class="sh-title">'+L('Diagnóstico 5D','5D-Diagnose')+(parentView?' · '+c.name:'')+'</div>'
     + '<div class="sh-sub">'+L('nível atual: ','aktuelle Stufe: ')+'<b>'+b5LvlLabel(c)+'</b></div>'
     + '<div class="note" style="margin:10px 2px 2px">'+head+'</div>'
     + trend
@@ -8122,7 +8249,7 @@ function openPassportSheet(i){
         ? '<div class="btnrow" style="margin-top:10px"><button class="btn secondary small" onclick="openGrowthMapSheet('+(i==null?family.cur:i)+')">'+L('Ver o Growth Map','Growth Map ansehen')+'</button></div>'
         : '<div class="btnrow" style="margin-top:10px"><button class="btn secondary small" onclick="openDiarySheet()">'+L('Meu diário de decisões','Mein Entscheidungs-Tagebuch')+'</button></div>'));
 }
-// cartão de entrada do passaporte (criança / adolescente)
+// cartão de entrada do diagnóstico (criança / adolescente)
 function b5PassportCardHtml(kid){
   const c = state, B = ensureB5(c);
   if(!B.diag.done) return '';
@@ -8130,8 +8257,8 @@ function b5PassportCardHtml(kid){
   const top = rows[0], low = rows[rows.length-1];
   return '<div class="'+(kid?'kcard':'card')+'" style="cursor:pointer" onclick="openPassportSheet()">'
     + '<div style="display:flex;align-items:center;gap:10px">'
-    +   '<div style="font-size:28px">🛂</div>'
-    +   '<div style="flex:1"><div style="font-weight:800;font-size:15px">'+L('Passaporte 5D','5D-Pass')+'</div>'
+    +   '<div style="font-size:28px">🌱</div>'
+    +   '<div style="flex:1"><div style="font-weight:800;font-size:15px">'+L('Diagnóstico 5D','5D-Diagnose')+'</div>'
     +   '<div class="note" style="margin:1px 0 0">'+L('nível: ','Stufe: ')+b5LvlLabel(c)+'</div></div>'
     +   '<span style="font-size:20px;color:var(--muted)">›</span>'
     + '</div>'
@@ -8164,17 +8291,17 @@ function b5Coach(c){
   }
   if(B.offer){
     const st = B5_LADDER.find(x=>x.n===B.offer);
-    if(st) out.push({ic:'🪜', pt:nm+' está pronto para '+st.pt.toLowerCase()+'. '+st.dpt,
+    if(st) out.push({ic:'🪜', pt:nm+' já tem o que é preciso para '+st.pt.toLowerCase()+'. '+st.dpt,
                             de:nm+' ist bereit für „'+st.de+'“. '+st.dde,
                      cpt:'Ver e liberar', cde:'Ansehen und freigeben', act:'openPassportSheet('+family.children.indexOf(c)+')'});
   }
   if(gave >= 2 && impulse >= 2){
     out.push({ic:'💬', pt:nm+' largou '+gave+' metas depois de compras por impulso. Evite repreender. Hoje, pergunte qual escolha faria diferente.',
-                    de:nm+' hat '+gave+' Ziele nach Impulskäufen losgelassen. Bitte nicht schimpfen. Fragen Sie heute, welche Entscheidung er/sie anders treffen würde.',
+                    de:nm+' hat '+gave+' Ziele nach Impulskäufen losgelassen. Bitte nicht schimpfen. Fragen Sie heute, welche Entscheidung '+nm+' anders treffen würde.',
               cpt:'Como conversar', cde:'Wie fragen', act:"b5CoachTip('gave')"});
   } else if(regret >= 2){
-    out.push({ic:'💬', pt:nm+' já disse que '+regret+' compras não valeram o que custaram. A percepção já veio dele — não repita em voz alta. Pergunte o que faria diferente.',
-                    de:nm+' hat bei '+regret+' Käufen gesagt, sie waren es nicht wert. Die Einsicht kam von selbst — nicht wiederholen. Fragen Sie, was er/sie anders machen würde.',
+    out.push({ic:'💬', pt:nm+' já disse que '+regret+' compras não valeram o que custaram. A percepção partiu de '+nm+' — não repita em voz alta. Pergunte o que faria diferente.',
+                    de:nm+' hat bei '+regret+' Käufen gesagt, sie waren es nicht wert. Die Einsicht kam von selbst — nicht wiederholen. Fragen Sie, was '+nm+' anders machen würde.',
               cpt:'Como conversar', cde:'Wie fragen', act:"b5CoachTip('regret')"});
   }
   if(!(c.budgets||[]).length){
@@ -8183,13 +8310,13 @@ function b5Coach(c){
               cpt:'Criar combinado', cde:'Vereinbarung anlegen', act:'openBudgetSheet()'});
   }
   if((B.sc.plan||0) < 55 && (c.budgets||[]).length){
-    out.push({ic:'🗺️', pt:'Esta semana, deixe que '+nm+' planeje sozinho um orçamento de '+fmt0(15)+'. Combine só o valor — o resto é escolha dele.',
-                    de:'Lassen Sie '+nm+' diese Woche allein ein Budget von '+fmt0(15)+' planen. Vereinbaren Sie nur den Betrag — der Rest ist seine/ihre Wahl.',
+    out.push({ic:'🗺️', pt:'Esta semana, deixe que '+nm+' planeje um orçamento de '+fmt0(15)+' sem ajuda. Combine só o valor — o resto é decisão de '+nm+'.',
+                    de:'Lassen Sie '+nm+' diese Woche allein ein Budget von '+fmt0(15)+' planen. Vereinbaren Sie nur den Betrag — der Rest ist die Entscheidung von '+nm+'.',
               cpt:'Por que funciona', cde:'Warum das wirkt', act:"b5CoachTip('plan')"});
   }
   if((B.sc.seg||0) < 50){
-    out.push({ic:'🛡️', pt:'Segurança é a competência mais atrasada de '+nm+'. Mostre uma cobrança de assinatura no seu próprio extrato e pergunte se ele saberia cancelar.',
-                    de:'Sicherheit ist bei '+nm+' am wenigsten entwickelt. Zeigen Sie eine Abo-Abbuchung in Ihrem eigenen Auszug und fragen Sie, ob er/sie kündigen könnte.',
+    out.push({ic:'🛡️', pt:'Segurança é a competência mais atrasada de '+nm+'. Mostre uma cobrança de assinatura no seu próprio extrato e pergunte se '+nm+' saberia cancelar.',
+                    de:'Sicherheit ist bei '+nm+' am wenigsten entwickelt. Zeigen Sie eine Abo-Abbuchung in Ihrem eigenen Auszug und fragen Sie, ob '+nm+' kündigen könnte.',
               cpt:'Como mostrar', cde:'Wie zeigen', act:"b5CoachTip('seg')"});
   }
   if(tr && tr.up >= 10){
@@ -8198,19 +8325,19 @@ function b5Coach(c){
               cpt:'Ver o mapa', cde:'Karte ansehen', act:'openGrowthMapSheet('+family.children.indexOf(c)+')'});
   }
   if(!out.length){
-    out.push({ic:'🍃', pt:'Nada exige sua atenção agora com '+nm+'. O melhor que você pode fazer esta semana é não interferir e deixar a próxima decisão acontecer.',
+    out.push({ic:'🍃', pt:'Nada exige sua atenção agora com '+nm+'. O melhor que você pode fazer esta semana é não interferir e deixar a próxima decisão de '+nm+' acontecer.',
                     de:'Bei '+nm+' braucht gerade nichts Ihre Aufmerksamkeit. Das Beste diese Woche: nicht eingreifen und die nächste Entscheidung geschehen lassen.',
-              cpt:'Ver o passaporte', cde:'Pass ansehen', act:'openPassportSheet('+family.children.indexOf(c)+')'});
+              cpt:'Ver o diagnóstico', cde:'Diagnose ansehen', act:'openPassportSheet('+family.children.indexOf(c)+')'});
   }
   return out.slice(0,3);
 }
 const B5_TIPS = {
-  diag: {pt:'O diagnóstico não é prova. São oito cenários curtos — "você tem 10 euros e vê duas coisas que quer" — combinados com o que o Brotto já observou na conta real: metas ativas, combinados criados, tarefas concluídas. Faça junto, no modo criança, sem corrigir a resposta dela. O resultado é o retrato de onde ela está hoje, não um julgamento.',
+  diag: {pt:'O diagnóstico não é prova. São oito cenários curtos — "você tem 10 euros e vê duas coisas que quer" — combinados com o que o Brotto já observou na conta real: metas ativas, combinados criados, tarefas concluídas. Faça junto, no modo criança, sem corrigir a resposta de {n}. O resultado é o retrato de onde {n} está hoje, não um julgamento.',
          de:'Die Einschätzung ist kein Test. Acht kurze Szenen — „du hast 10 Euro und siehst zwei Dinge, die du willst“ — kombiniert mit dem, was Brotto im echten Konto schon beobachtet hat: aktive Ziele, angelegte Vereinbarungen, erledigte Aufgaben. Machen Sie es gemeinsam im Kindmodus, ohne die Antwort zu korrigieren. Das Ergebnis ist ein Bild von heute, kein Urteil.'},
-  gave: {pt:'Largar uma meta depois de um impulso é a sequência mais comum da infância — e a mais fácil de estragar com bronca. A bronca ensina a esconder a decisão; a pergunta ensina a revê-la. Frase que funciona: "se acontecesse de novo amanhã, o que você faria diferente?" Depois, silêncio. A resposta dela vale mais que qualquer explicação sua.',
+  gave: {pt:'Largar uma meta depois de um impulso é a sequência mais comum da infância — e a mais fácil de estragar com bronca. A bronca ensina a esconder a decisão; a pergunta ensina a revê-la. Frase que funciona: "se acontecesse de novo amanhã, o que você faria diferente?" Depois, silêncio. A resposta de {n} vale mais que qualquer explicação sua.',
          de:'Ein Ziel nach einem Impuls loszulassen ist die häufigste Abfolge der Kindheit — und die, die Schimpfen am leichtesten zerstört. Schimpfen lehrt, die Entscheidung zu verstecken; die Frage lehrt, sie zu überdenken. Ein Satz, der wirkt: „Wenn es morgen wieder passiert, was würdest du anders machen?“ Dann schweigen. Die Antwort ist mehr wert als jede Erklärung.'},
-  regret:{pt:'Ela já concluiu sozinha que não valeu. Esse é o aprendizado inteiro — e ele se apaga no instante em que você repete em voz alta. Não diga "eu avisei". Diga: "o que você percebeu depois?" e deixe ela nomear. Nomear é o que fixa.',
-         de:'Sie hat selbst erkannt, dass es das nicht wert war. Das ist der ganze Lerneffekt — und er verschwindet, sobald Sie es laut wiederholen. Sagen Sie nicht „ich hab’s gesagt“. Sagen Sie: „Was ist dir danach aufgefallen?“ und lassen Sie sie es benennen. Das Benennen ist, was bleibt.'},
+  regret:{pt:'{n} já chegou a essa conclusão sem ajuda nenhuma. Esse é o aprendizado inteiro — e ele se apaga no instante em que você repete em voz alta. Não diga "eu avisei". Diga: "o que você percebeu depois?" e deixe {n} nomear. Nomear é o que fixa.',
+         de:'{n} hat selbst erkannt, dass es das nicht wert war. Das ist der ganze Lerneffekt — und er verschwindet, sobald Sie es laut wiederholen. Sagen Sie nicht „ich hab’s gesagt“. Sagen Sie: „Was ist dir danach aufgefallen?“ und lassen Sie {n} es benennen. Das Benennen ist, was bleibt.'},
   plan:  {pt:'Planejar exige errar com dinheiro que cabe. Quinze euros é uma quantia grande o suficiente para a escolha importar e pequena o suficiente para o erro não doer. Combine só o valor e o prazo. Não opine na lista. Se acabar antes do prazo, não reponha — a falta é a aula.',
          de:'Planen lernt man nur, indem man mit einem Betrag irrt, der verkraftbar ist. Fünfzehn Euro sind groß genug, damit die Wahl zählt, und klein genug, damit der Fehler nicht wehtut. Vereinbaren Sie nur Betrag und Zeitraum. Kommentieren Sie die Liste nicht. Ist es früher alle, nicht nachlegen — der Mangel ist die Lektion.'},
   seg:   {pt:'Golpe e assinatura têm o mesmo mecanismo: alguém conta com a sua distração. Abra seu próprio extrato, aponte uma cobrança recorrente e pergunte "quanto isso custa por ano?" — a multiplicação por doze é o que dá o susto certo. Depois mostre onde se cancela. Saber cancelar é a competência, não saber desconfiar.',
@@ -8218,10 +8345,12 @@ const B5_TIPS = {
 };
 function b5CoachTip(k){
   const t = B5_TIPS[k]; if(!t) return;
+  const _tn = (family.children[family.cur]||{}).name || L('seu filho','Ihr Kind');
+  const _fill = function(s){ return String(s).replace(/\{n\}/g, _tn); };
   showSheet('<div class="grab"></div><div class="sh-emoji">🧭</div>'
     + '<div class="sh-title">'+L('Coach dos pais','Eltern-Coach')+'</div>'
     + '<div class="sh-sub">'+L('curto, contextual e acionável','kurz, konkret, umsetzbar')+'</div>'
-    + '<div style="background:var(--page);border-radius:16px;padding:14px;margin:14px 0 4px;font-size:14px;line-height:1.6">'+L(t.pt,t.de)+'</div>'
+    + '<div style="background:var(--page);border-radius:16px;padding:14px;margin:14px 0 4px;font-size:14px;line-height:1.6">'+_fill(L(t.pt,t.de))+'</div>'
     + '<div class="note" style="margin:8px 2px 0">'+L('Do livro <i>O Poder da Mesada</i>: comunicação é a chave — a consequência ensina quando vem com conversa.',
         'Aus dem Buch <i>O Poder da Mesada</i>: Kommunikation ist der Schlüssel — Konsequenz lehrt nur zusammen mit Gespräch.')+'</div>');
 }
@@ -8241,7 +8370,7 @@ function pCoachHtml(){
         + '</div></div>').join('')
     + '<div class="note" style="margin:10px 0 0">'+L('Baseado no comportamento observado de '+c.name+' — não em médias de outras famílias.',
         'Basierend auf dem beobachteten Verhalten von '+c.name+' — nicht auf Durchschnitten anderer Familien.')+'</div>'
-    + '<div class="btnrow"><button class="btn secondary small" onclick="openPassportSheet('+idx+')">'+L('Passaporte 5D de '+c.name,'5D-Pass von '+c.name)+'</button></div>'
+    + '<div class="btnrow"><button class="btn secondary small" onclick="openPassportSheet('+idx+')">'+L('Diagnóstico 5D de '+c.name,'5D-Diagnose von '+c.name)+'</button></div>'
     + '</div>';
 }
 // ================= MOTOR 5D · PEÇA H ==============================
@@ -8343,19 +8472,53 @@ function openGrowthMapSheet(i){
     + '</div>'
     + '<div class="btnrow" style="margin-top:12px">'
     +   '<button class="btn small" onclick="openGrowthPdf('+idx+')"><span class="msy inl">&#xE873;</span> '+L('Baixar em PDF','Als PDF laden')+'</button>'
-    +   '<button class="btn secondary small" onclick="openPassportSheet('+idx+')">'+L('Passaporte 5D','5D-Pass')+'</button>'
+    +   '<button class="btn secondary small" onclick="openPassportSheet('+idx+')">'+L('Diagnóstico 5D','5D-Diagnose')+'</button>'
     + '</div>'
     + '<div class="note" style="margin:10px 2px 0">'+L('Este mapa não mostra transações: mostra decisões. É o que permite usá-lo com escolas e programas de benefício sem expor a vida financeira da família.',
         'Diese Karte zeigt keine Transaktionen, sondern Entscheidungen. Deshalb lässt sie sich mit Schulen und Benefit-Programmen nutzen, ohne das Finanzleben der Familie offenzulegen.')+'</div>');
 }
+// cartão do Diagnóstico 5D na home do responsável — logo abaixo dos tiles
+// de mesada / poupança / nível de poupança, porque é a leitura que dá
+// sentido aos números acima: o dinheiro é o meio, a competência é o fim.
+function pPassportHtml(compact){
+  if(curMode !== 'parent') return '';
+  const _c0 = family.children[family.cur]; if(!_c0) return '';
+  return '<div class="card">'
+    + '<h2>🌱 '+L('Diagnóstico 5D','5D-Diagnose')+' <span class="hint">'+L('de ','von ')+_c0.name+L(' · evidência, não nota',' · Nachweis statt Note')+'</span></h2>'
+    + (compact ? '' : '<div class="note" style="margin:0 0 4px">'+L('O que '+_c0.name+' já demonstrou nas oito competências, com a evidência observada e o próximo passo. É daqui que sai a escada de autonomia. O Growth Map, logo abaixo, é o filme do mês; o Diagnóstico é o retrato de agora.',
+        'Was '+_c0.name+' in den acht Fähigkeiten bereits gezeigt hat — mit beobachtetem Nachweis und nächstem Schritt. Daraus entsteht die Leiter der Selbstständigkeit. Die Growth Map direkt darunter ist der Film des Monats; die Diagnose ist das Foto von jetzt.')+'</div>')
+    + [_c0].map(function(c){
+        const i = family.cur;
+        const B = ensureB5(c);
+        const rows = b5PassportRows(c).slice().sort(function(a,b){return b.v-a.v;});
+        const top = rows[0], low = rows[rows.length-1];
+        const done = !!(B.diag && B.diag.done);
+        const sub = done
+          ? L('nível: ','Stufe: ')+'<b>'+b5LvlLabel(c)+'</b>'
+          : L('diagnóstico inicial ainda não feito · 5 minutos','Erst-Einschätzung noch nicht gemacht · 5 Minuten');
+        const skills = (done && !compact)
+          ? '<div class="note" style="margin:1px 0 0">'+top.ic+' '+L('mais forte','am stärksten')+': '+top.name
+            + ' · '+low.ic+' '+L('treinando','im Training')+': '+low.name+'</div>'
+          : '';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--grid);cursor:pointer" onclick="openPassportSheet('+i+')">'
+          + '<span style="font-size:22px;flex:none">'+(c.avatar||'🦊')+'</span>'
+          + '<div style="flex:1"><div style="font-weight:800;font-size:14px">'+c.name+'</div>'
+          +   '<div class="note" style="margin:1px 0 0">'+sub+'</div>'+skills+'</div>'
+          + (B.offer ? '<span style="flex:none;background:#eef7f2;color:#199e70;font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px">🪜 '+L('pronto','bereit')+'</span>' : '')
+          + '<span style="font-size:20px;color:var(--muted)">›</span></div>';
+      }).join('')
+    + '</div>';
+}
 // cartão do Growth Map na aba de relatórios do responsável
 function pGrowthMapHtml(){
   if(curMode !== 'parent') return '';
+  const _g0 = family.children[family.cur]; if(!_g0) return '';
   return '<div class="card">'
-    + '<h2>🗺️ '+L('Brotto Growth Map','Brotto Growth Map')+' <span class="hint">'+L('mensal · por filho','monatlich · pro Kind')+'</span></h2>'
-    + '<div class="note" style="margin:0 0 10px">'+L('Como seu filho está aprendendo a lidar com dinheiro na vida real: decisões planejadas × impulsivas, metas, capacidade de espera, organização, segurança, nível de autonomia recomendado e uma sugestão prática para o mês seguinte.',
-        'Wie Ihr Kind im echten Leben den Umgang mit Geld lernt: geplante × impulsive Entscheidungen, Ziele, Wartefähigkeit, Organisation, Sicherheit, empfohlene Selbstständigkeits-Stufe und ein praktischer Vorschlag für den nächsten Monat.')+'</div>'
-    + family.children.map((c,i)=>{
+    + '<h2>🗺️ '+L('Brotto Growth Map','Brotto Growth Map')+' <span class="hint">'+L('de ','von ')+_g0.name+L(' · mensal',' · monatlich')+'</span></h2>'
+    + '<div class="note" style="margin:0 0 10px">'+L('Como '+_g0.name+' está aprendendo a lidar com dinheiro na vida real: decisões planejadas × impulsivas, metas, capacidade de espera, organização, segurança, nível de autonomia recomendado e uma sugestão prática para o mês seguinte.',
+        'Wie '+_g0.name+' im echten Leben den Umgang mit Geld lernt: geplante × impulsive Entscheidungen, Ziele, Wartefähigkeit, Organisation, Sicherheit, empfohlene Selbstständigkeits-Stufe und ein praktischer Vorschlag für den nächsten Monat.')+'</div>'
+    + [_g0].map((c)=>{
+        const i = family.cur;
         const g = b5GrowthData(c);
         return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--grid);cursor:pointer" onclick="openGrowthMapSheet('+i+')">'
           + '<div style="font-size:24px">'+(c.avatar||'🧒')+'</div>'
@@ -8414,7 +8577,7 @@ function openGrowthPdf(i){ printDoc(growthDocHtml(i)); }
 // ================= MOTOR 5D · PEÇA I ==============================
 // Montagem: o motor aparece dentro do fluxo normal do app, nunca como
 // uma "área de conteúdo" separada. Ordem = urgência para a criança:
-// diagnóstico → momento pendente → espera de 24h → reflexão → passaporte
+// diagnóstico inicial → momento pendente → espera de 24h → reflexão → diagnóstico 5D
 // → diário.
 // ------------------------------------------------------------------
 function b5MotorHtml(kid){
@@ -8432,7 +8595,13 @@ function b5RenderCards(){
     const tm = document.getElementById('tMotor');
     if(tm) tm.innerHTML = (child && !isKid()) ? b5MotorHtml(false) : '';
     const pc = document.getElementById('pCoach');
-    if(pc) pc.innerHTML = pCoachHtml();
+    if(pc) pc.innerHTML = pCoachFamHtml();
+    const pcf = document.getElementById('pCoachFull');
+    if(pcf) pcf.innerHTML = pCoachHtml();
+    const pp = document.getElementById('pPassport');
+    if(pp) pp.innerHTML = pPassportHtml(false);
+    const pph = document.getElementById('pPassportHome');
+    if(pph) pph.innerHTML = pPassportHtml(true);
     const pg = document.getElementById('pGrowthMap');
     if(pg) pg.innerHTML = pGrowthMapHtml();
   }catch(e){}
@@ -8867,6 +9036,15 @@ const I18N = {
   "ativar":"aktivieren",
   "Ativar modo viagem":"Reisemodus aktivieren",
   "Atividade dos filhos":"Aktivität der Kinder",
+  "Família":"Familie",
+  "Evolução":"Entwicklung",
+  "Seus filhos":"Ihre Kinder",
+  "toque para entrar":"zum Öffnen tippen",
+  "de todos os filhos":"von allen Kindern",
+  "de todos, em tempo real":"von allen, in Echtzeit",
+  "Aqui chegam as tarefas que os filhos marcarem como feitas e os pedidos de compra acima do combinado.":"Hier landen die Aufgaben, die die Kinder als erledigt markieren, und Kaufanfragen über der Vereinbarung.",
+  "O dinheiro do mês e o extrato oficial ficam na aba Conta. O relatório da família em PDF fica na aba Família.":"Das Geld des Monats und der offizielle Auszug liegen im Tab Konto. Der Familienbericht als PDF liegt im Tab Familie.",
+  "Atividade":"Aktivität",
   "ativo":"aktiv",
   "ativo — mesmo saldo e mesmos controles do virtual":"aktiv — gleiches Guthaben und gleiche Kontrollen wie virtuell",
   "Ativos × Passivos":"Aktiva × Passiva",
@@ -8909,6 +9087,19 @@ const I18N = {
   "chave de segurança":"Sicherheitsschlüssel",
   "chega":"kommt",
   "Cinema":"Kino",
+  "Cinema · Berlim · DE":"Kino · Berlin · DE",
+  "Sorveteria · Berlim · DE":"Eisdiele · Berlin · DE",
+  "Supermercado · Berlim · DE":"Supermarkt · Berlin · DE",
+  "Banca · Berlim · DE":"Kiosk · Berlin · DE",
+  "Banca · Berlim · DE 📍":"Kiosk · Berlin · DE 📍",
+  "Loja de esportes · Berlim · DE":"Sportgeschäft · Berlin · DE",
+  "Loja de esportes · Berlim · DE 📍":"Sportgeschäft · Berlin · DE 📍",
+  "Padaria · Paris · FR":"Bäckerei · Paris · FR",
+  "Padaria · Paris · FR 📍":"Bäckerei · Paris · FR 📍",
+  "Eletrônicos · online":"Elektronik · online",
+  "Eletrônicos · online 🌐":"Elektronik · online 🌐",
+  "Jogos · online":"Spiele · online",
+  "Jogos · online 🌐":"Spiele · online 🌐",
   "Cinema · Berlim · DE 📍":"Kino · Berlin · DE 📍",
   "cobra no cartão e já cai repartido nos 5 pilares — Dignidade primeiro":"wird auf der Karte belastet und sofort auf die 5 Säulen verteilt — Würde zuerst",
   "Cobrado duas vezes":"Doppelt belastet",
@@ -8923,6 +9114,7 @@ const I18N = {
   "Como são menores, quem encerra é você (representante legal). Os dados de KYC/AML ficam retidos pelo prazo legal antes da eliminação.":"Da es Minderjährige sind, schließen Sie das Konto (gesetzliche Vertretung). Die KYC/AML-Daten werden für die gesetzliche Frist aufbewahrt, bevor sie gelöscht werden.",
   "Compras do mundo real aparecem aqui na hora, com logo e local.":"Einkäufe aus der echten Welt erscheinen hier sofort, mit Logo und Ort.",
   "Concluir":"Abschließen",
+  "Carteira da família":"Familien-Wallet",
   "Configurar mesada":"Taschengeld einrichten",
   "Congelar cartão":"Karte sperren",
   "consentimento parental (GDPR art. 8) · você vê a conversa · ativo":"elterliche Einwilligung (DSGVO Art. 8) · Sie sehen den Chat · aktiv",
@@ -9053,6 +9245,7 @@ const I18N = {
   "Extrato":"Kontoauszug",
   "Extrato mensal":"Monatsauszug",
   "Extrato oficial gerado pela Treezor no fechamento de cada mês.":"Offizieller Auszug, von Treezor zum Monatsende erstellt.",
+  "O dinheiro do mês e o extrato oficial ficam na aba Conta.":"Das Geld des Monats und der offizielle Auszug liegen im Tab Konto.",
   "Família":"Familie",
   "Fase do seu filho":"Phase Ihres Kindes",
   "Fechar":"Schließen",
@@ -9070,6 +9263,8 @@ const I18N = {
   "grátis":"kostenlos",
   "Guardado":"Gespart",
   "Guardar":"Bewahren",
+  "Defesa + Dignidade rendem juros — o saldo ali é":"Absicherung + Würde bringen Zinsen — der Saldo dort ist",
+  "Defesa 🛡️ + Dignidade 🕊️ rendem juros — o saldo ali é":"Absicherung 🛡️ + Würde 🕊️ bringen Zinsen — der Saldo dort ist",
   "Guardar + Ser livre rendem juros — o saldo ali é":"Bewahren + Frei sein bringen Zinsen — der Saldo dort ist",
   "Guardar 🛡️ + Ser livre 🕊️ rendem juros — o saldo ali é":"Bewahren 🛡️ + Frei sein 🕊️ bringen Zinsen — der Saldo dort ist",
   "guardar em qual casinha?":"in welchem Häuschen sparen?",
@@ -9782,7 +9977,7 @@ const I18N = {
   "🌱 Seu dinheiro trabalhou dormindo:":"🌱 Dein Geld hat im Schlaf gearbeitet:",
   "caíram nos seus cofrinhos!":"sind in deinen Sparschweinen gelandet!",
   "Juros da família pagos:":"Familienzinsen ausgezahlt:",
-  "% sobre Guardar + Ser livre de todos os filhos).":"% auf Bewahren + Frei sein aller Kinder).",
+  "% sobre Defesa + Dignidade de todos os filhos).":"% auf Absicherung + Würde aller Kinder).",
   "pagos — o hábito rendeu!":"ausgezahlt — die Gewohnheit hat sich ausgezahlt!",
   "Um sonho que a família inteira constrói junto — cada um coloca a sua parte, cada nome aparece na barra. O livro chama de \"remar juntos\".":"Ein Traum, den die ganze Familie gemeinsam verwirklicht — jeder trägt seinen Teil bei, jeder Name erscheint auf der Leiste. Das Buch nennt das „gemeinsam rudern\".",
   "＋ Criar meta da família":"＋ Familienziel erstellen",
