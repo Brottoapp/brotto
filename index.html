@@ -407,6 +407,43 @@
     transition:transform .12s ease;box-shadow:0 3px 0 rgba(0,0,0,.15);}
   .kbtn:active{transform:translateY(2px);box-shadow:none;}
   .kbtn.line{background:var(--surface);color:var(--ink);border:2px solid var(--grid);box-shadow:0 3px 0 var(--grid);}
+  /* ===== CENARIO DE DECISAO (3-10) =====
+     A ordem de leitura de uma criança e por tamanho, nao por posicao. Aqui a
+     PERGUNTA e o maior elemento da tela; a cena vem antes dela para dar
+     contexto; as escolhas vem depois, com um icone que ancora cada uma sem
+     depender de leitura. Antes a pergunta tinha 18px e perdia para os botoes. */
+  .scn-dots{display:flex;gap:7px;justify-content:center;margin:10px 0 12px;}
+  .scn-dot{width:9px;height:9px;border-radius:50%;background:var(--grid);transition:transform .2s;}
+  .scn-dot.done{background:var(--progress);}
+  .scn-dot.now{background:var(--ink);transform:scale(1.3);}
+  .scn-scene{display:flex;align-items:center;gap:13px;background:var(--page);
+    border:2px solid var(--grid);border-radius:20px;padding:14px 15px;margin:0;}
+  .scn-scene .se{font-size:38px;line-height:1;flex:none;}
+  .scn-scene .st{font-size:16px;line-height:1.35;color:var(--ink);font-weight:600;text-align:left;}
+  .scn-q{font-size:27px;font-weight:800;line-height:1.14;letter-spacing:-.6px;
+    text-align:center;color:var(--ink);margin:16px 4px 10px;}
+  .scn-say{display:block;margin:0 auto 16px;background:var(--surface);color:var(--ink-2);
+    border:2px solid var(--grid);border-radius:999px;padding:9px 18px;font-size:14.5px;
+    font-weight:700;font-family:inherit;cursor:pointer;min-height:44px;}
+  .scn-say:active{transform:translateY(1px);}
+  .scn-opt{display:flex;align-items:center;gap:13px;width:100%;min-height:68px;
+    background:var(--surface);border:2px solid var(--grid);border-radius:20px;
+    padding:12px 14px;margin-bottom:10px;cursor:pointer;font-family:inherit;
+    text-align:left;box-shadow:0 4px 0 var(--grid);transition:transform .12s ease;}
+  .scn-opt:active{transform:translateY(3px);box-shadow:0 1px 0 var(--grid);}
+  .scn-opt .oe{width:46px;height:46px;border-radius:50%;background:var(--page);
+    border:1px solid var(--ring);display:flex;align-items:center;justify-content:center;
+    font-size:24px;line-height:1;flex:none;}
+  .scn-opt .oe.num{font-size:15px;font-weight:800;letter-spacing:-.3px;}
+  .scn-opt .ob{flex:1;min-width:0;}
+  .scn-opt .ot{display:block;font-size:17.5px;font-weight:800;line-height:1.22;color:var(--ink);}
+  .scn-opt .os{display:block;font-size:13px;font-weight:600;line-height:1.35;color:var(--muted);margin-top:3px;}
+  .scn-tip{font-size:17px;line-height:1.45;color:var(--ink);text-align:center;
+    font-weight:600;max-width:320px;margin:8px auto 0;}
+  .scn-invite{display:block;width:100%;margin-top:10px;background:var(--btn);color:var(--btn-ink);
+    border:none;border-radius:16px;padding:14px 12px;font-size:15.5px;font-weight:800;
+    font-family:inherit;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);line-height:1.25;}
+  .scn-invite:active{transform:translateY(2px);box-shadow:none;}
   /* tarefas kid */
   .ktask{display:flex;align-items:center;gap:14px;background:var(--surface);
     border:1px solid var(--ring);border-radius:20px;padding:16px;margin-bottom:11px;}
@@ -741,7 +778,7 @@
           <div class="vc-bottom">
             <span id="kCardName">LUDO S.</span>
             <span style="display:flex;align-items:center;gap:8px">
-              <span class="vc-num" id="kCardNum" style="font-size:12px;letter-spacing:2px;opacity:.75">•••• 5D21</span>
+              <span class="vc-num" id="kCardNum" style="font-size:12px;letter-spacing:2px;opacity:.75">•••• 5421</span>
               <span class="mc"><i></i><i></i></span>
             </span>
           </div>
@@ -843,7 +880,7 @@
           <div id="cardBal" style="font-size:27px;font-weight:800;line-height:1.05">€0</div>
         </div>
         <div class="vc-bottom">
-          <span><span id="tCardName">LUDO S.</span> · <span class="vc-num" id="tCardNum" style="font-size:12px;letter-spacing:2px;opacity:.8">•••• 5D21</span></span>
+          <span><span id="tCardName">LUDO S.</span> · <span class="vc-num" id="tCardNum" style="font-size:12px;letter-spacing:2px;opacity:.8">•••• 5421</span></span>
           <span class="mc"><i></i><i></i></span>
         </div>
       </div>
@@ -1150,9 +1187,11 @@ const PHASES = [
 //  · despesa  = saldo da WALLET CARTÃO (o cartão vincula a exatamente 1 wallet)
 //  · desenv/desejo/defesa/dign = razão (ledger) do app dentro da WALLET COFRE
 //  · parentBalance = wallet do responsável (origem da mesada e das recompensas)
-//  · resgate = POST /v1/transfers (Cofre → Cartão), 24/7, validado na hora
-//  · mesada  = scheduled payment (beta) ou agendador próprio; ocorrência que falha → failedPayment
-const PHASE_LIMITS = [   // presets de PUT /v1/cards/{cardId}/Limits por fase
+//  · resgate = POST /v1/transfer (Cofre → Cartão) — singular na criação; 24/7, validado na hora
+//  · mesada  = agendador do NOSSO backend: a cada vencimento dispara um POST /v1/transfer da
+//              wallet do responsável para a do filho. A Treezor não documenta pagamento recorrente
+//              na API pública — a recorrência é nossa. Falha (saldo) → retry + aviso ao responsável.
+const PHASE_LIMITS = [   // presets de PUT /v1/cards/{cardId}/Limits por fase (exige scaProof por operação)
   {d:5,  w:10,  m:20},
   {d:15, w:30,  m:60},
   {d:30, w:60,  m:120},
@@ -1161,12 +1200,17 @@ const PHASE_LIMITS = [   // presets de PUT /v1/cards/{cardId}/Limits por fase
 const LUDO = {
   name:'Ludo', avatar:'🦊', cq:[],
   balances:{despesa:12.5, desenv:6, desejo:18, defesa:8, dign:5.5},
-  // controles do cartão (Treezor: /v1/cards/{cardId}/Limits · /Options(permsGroup) · mccRestrictionGroups · /LockUnlock)
+  // controles do cartão — todos PUT /v1/cards/{cardId}/... na Treezor:
+  //   /Limits (limitPaymentDay|Week|Month + limitAtm*) · /Options (atm|online|nfc|foreign, permsGroup TRZ-CU-001..016)
+  //   /LockUnlock (lockStatus 0=UNLOCK 1=LOCK 2=LOST 3=STOLEN 4=DESTROYED 5=LOCK_INTERNAL 6=EXPIRED 7=CUSTOM)
+  //   Limits e Options exigem scaProof por operação.
   card:{
     limits:{d:15, w:30, m:60, tx:10},   // tx = teto por compra (regra do app sobre a autorização)
     perms:{online:true, nfc:true, atm:false, intl:false},
     // Bloqueio por CATEGORIA (mesma taxonomia fina dos combinados: grupo BUDGET_CATS ou subcategoria SUBCATS).
-    // Cada nome vira um mccRestrictionGroup na Treezor. "Conteúdo e produtos 18+" é trava fixa em cartão de menor.
+    // ATENÇÃO: o cartão carrega UM único mccRestrictionGroupId. Não existe "um grupo por categoria".
+    // O app mantém 1 grupo por cartão (isWhitelist:false) e reescreve a lista de MCC a cada mudança aqui.
+    // "Conteúdo e produtos 18+" é trava fixa em cartão de menor.
     blocked:{'Conteúdo e produtos 18+':true, 'Jogos':true},
     frozen:false,
     physical:'none',                 // none | requested | shipping | active
@@ -1283,7 +1327,7 @@ const ALICE = {
   ],
   catOverrides:{}, wishlist:[], biz:[{name:'Brigadeiros na escola', cost:5, revenue:12}],
   beneficiaries:[
-    {id:1, name:'Vovó Marta', iban:'DE89 •••• •••• 4471', limit:20, status:'active'},
+    {id:1, name:'Vovó Marta', iban:'DE94 •••• •••• 4471', limit:20, status:'active'},
     {id:2, name:'Pedro (amigo da escola)', iban:'DE22 •••• •••• 9930', limit:10, status:'active'},
   ],
   sendCaps:{day:30, week:80}, sent:{day:0, week:0},   // teto agregado de envios a cadastrados (0 = sem teto)
@@ -2223,8 +2267,8 @@ function render(){
 
   // contas reais (visão teen) — toque abre os dados completos (IBAN/BIC)
   document.getElementById('acctChips').innerHTML =
-    '<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'card\')"><div class="t-k">'+L('Saldo disponível','Verfügbares Guthaben')+'</div><div class="t-v">'+fmt0(state.balances.despesa)+'</div><div class="t-s">DE89 ···· 5D21 · ver IBAN</div></div>'
-    +'<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'cofre\')"><div class="t-k">'+L('Saldo poupado','Gespartes Guthaben')+'</div><div class="t-v">'+fmt0(cofre)+'</div><div class="t-s">DE89 ···· 7C03 · ver IBAN</div></div>';
+    '<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'card\')"><div class="t-k">'+L('Saldo disponível','Verfügbares Guthaben')+'</div><div class="t-v">'+fmt0(state.balances.despesa)+'</div><div class="t-s">DE03 ···· 5421 · ver IBAN</div></div>'
+    +'<div class="tile" style="flex:1;cursor:pointer" onclick="openAccountSheet(\'cofre\')"><div class="t-k">'+L('Saldo poupado','Gespartes Guthaben')+'</div><div class="t-v">'+fmt0(cofre)+'</div><div class="t-s">DE52 ···· 5703 · ver IBAN</div></div>';
 
   const pmf=document.getElementById('pMoneyFlow'); if(pmf) pmf.innerHTML = moneyFlowCardHtml(false);
   renderAlloc();
@@ -2427,8 +2471,10 @@ function receiveAllowance(){
   const amt = state.allowance.amount;
   state.sent = {day:0, week:0};   // novo período de mesada → zera os tetos de envio
   if(state.card && state.card.spent){ state.card.spent.d = 0; state.card.spent.w = 0; }  // novo período → zera limites diário/semanal do cartão
-  // Treezor: o pagamento programado debita a wallet do responsável.
-  // Falha na execução → a ocorrência é cancelada e vai para failedPayment (Scheduled Payments, beta).
+  // O agendador do NOSSO backend dispara, no vencimento, um POST /v1/transfer
+  // walletId (responsável) → beneficiaryWalletId (filho). A Treezor não documenta
+  // recorrência na API pública — quem guarda a regra da mesada somos nós.
+  // Saldo insuficiente: a chamada é recusada; tratamos com auto-recarga + retry.
   if(family.parentBalance < amt && family.autoReload.on){
     // fallback da mesada: puxa o suficiente para cobrir (nunca deixa a mesada falhar), pelo meio escolhido
     const need = amt - family.parentBalance;
@@ -3062,6 +3108,10 @@ function foxScenarioBank(){
      o:[['Separo um pouco antes de gastar qualquer coisa','Ich lege zuerst etwas beiseite, bevor ich etwas ausgebe'],
         ['Gasto no que der vontade e vejo o que sobra','Ich gebe aus, worauf ich Lust habe, und schaue, was übrig bleibt'],
         ['Deixo tudo parado e decido outro dia','Ich lasse alles liegen und entscheide ein andermal']],
+     se:'💰', e:['🐷','🛍️','😴'],
+     s:[['Guardo um pouco primeiro','Ich lege zuerst etwas weg'],
+        ['Gasto e vejo o que sobra','Ich gebe aus und schaue, was bleibt'],
+        ['Decido outro dia','Ich entscheide ein andermal']],
      c:0,
      tip:['Separar primeiro é o que faz sobrar. Quem espera sobrar quase nunca vê sobrar.',
           'Zuerst beiseitelegen ist der Grund, warum etwas übrig bleibt. Wer auf den Rest wartet, sieht selten einen.']},
@@ -3073,6 +3123,10 @@ function foxScenarioBank(){
      o:[['Compro agora, antes que acabe','Ich kaufe sofort, bevor es weg ist'],
         ['Espero até amanhã e vejo se ainda quero','Ich warte bis morgen und schaue, ob ich es noch will'],
         ['Peço pra outra pessoa comprar pra mim','Ich bitte jemand anderen, es für mich zu kaufen']],
+     se:'🧸', e:['⚡','🌙','🙋'],
+     s:[['Compro agora mesmo','Ich kaufe sofort'],
+        ['Espero até amanhã','Ich warte bis morgen'],
+        ['Peço pra outra pessoa','Ich bitte jemand anderen']],
      c:1,
      tip:['Esperar um dia não custa nada — e quase sempre mostra se o desejo era de verdade.',
           'Einen Tag zu warten kostet nichts — und zeigt fast immer, ob der Wunsch echt war.']},
@@ -3084,6 +3138,10 @@ function foxScenarioBank(){
      o:[['Digito, é só uma confirmação','Ich tippe sie ein, es ist ja nur eine Bestätigung'],
         ['Chamo um adulto antes de digitar qualquer número','Ich hole eine erwachsene Person, bevor ich irgendeine Nummer eintippe'],
         ['Uso o cartão de outra pessoa','Ich nehme die Karte von jemand anderem']],
+     se:'🎮', e:['⌨️','🛟','💳'],
+     s:[['Digito o número','Ich tippe die Nummer ein'],
+        ['Chamo um adulto','Ich hole eine erwachsene Person'],
+        ['Uso o cartão de outra pessoa','Ich nehme eine fremde Karte']],
      c:1,
      tip:['Nenhum jogo precisa do seu cartão para saber a sua idade. Pedir número de cartão é o sinal de golpe mais comum.',
           'Kein Spiel braucht deine Karte, um dein Alter zu kennen. Nach der Kartennummer zu fragen ist das häufigste Betrugssignal.']},
@@ -3095,6 +3153,10 @@ function foxScenarioBank(){
      o:[['Do Ser livre — é promoção, depois eu reponho','Aus dem Frei-sein — ist ja ein Angebot, ich lege es später zurück'],
         ['Do Querer, mesmo que eu tenha que esperar mais','Aus dem Wollen, auch wenn ich dann länger warten muss'],
         ['Peço emprestado e devolvo semana que vem','Ich leihe es mir und gebe es nächste Woche zurück']],
+     se:'🕊️', e:['🕊️','💛','🤝'],
+     s:[['Tiro do Ser livre','Ich nehme aus dem Frei-sein'],
+        ['Tiro do Querer e espero mais','Ich nehme aus dem Wollen und warte länger'],
+        ['Peço emprestado','Ich leihe es mir']],
      c:1,
      tip:['O Ser livre é intocável: ele existe para você poder dizer "não". Promoção que só vale hoje é pressa, não oportunidade.',
           'Das Frei-sein ist unantastbar: Es gibt es, damit du "nein" sagen kannst. Ein Angebot, das nur heute gilt, ist Eile, keine Gelegenheit.']},
@@ -3106,6 +3168,10 @@ function foxScenarioBank(){
      o:[['A de €12 — é o menor preço','Der für €12 — der niedrigste Preis'],
         ['A de €20 — custa menos por ano','Der für €20 — er kostet weniger pro Jahr'],
         ['Dá no mesmo','Kommt aufs Gleiche raus']],
+     se:'🎒', e:['€12','€20','='],
+     s:[['A de €12','Der für €12'],
+        ['A de €20','Der für €20'],
+        ['Dá no mesmo','Kommt aufs Gleiche raus']],
      c:1,
      tip:['Preço é o que você paga hoje. Valor é quanto tempo aquilo serve para você.',
           'Preis ist, was du heute zahlst. Wert ist, wie lange es dir dient.']},
@@ -3116,6 +3182,10 @@ function foxScenarioBank(){
      q:['O que você escolhe?','Wofür entscheidest du dich?'],
      o:[['O jogo — a bicicleta pode esperar sempre','Das Spiel — das Fahrrad kann immer warten'],
         ['A bicicleta — e escrevo por que escolhi ela','Das Fahrrad — und ich schreibe auf, warum'],
+        ['Não decido agora','Ich entscheide jetzt nicht']],
+     se:'🚲', e:['🎮','🚲','🤔'],
+     s:[['O jogo, hoje','Das Spiel, heute'],
+        ['A bicicleta, e escrevo por quê','Das Fahrrad, und ich schreibe warum'],
         ['Não decido agora','Ich entscheide jetzt nicht']],
      c:1,
      tip:['Escolher já é difícil. Escrever o porquê é o que faz a escolha durar até a semana seguinte.',
@@ -3131,11 +3201,16 @@ function foxScenarioBank(){
       o:[['Ver quanto já foi e combinar um teto','Nachsehen, wie viel schon weg ist, und ein Limit vereinbaren'],
          ['Gastar igual e olhar no fim do mês','Genauso weiter und am Monatsende nachsehen'],
          ['Nunca mais gastar nisso','Nie wieder etwas dafür ausgeben']],
+      se:'📊', e:['👀','🔁','🚫'],
+      s:[['Vejo quanto já foi','Ich sehe nach, wie viel weg ist'],
+         ['Gasto igual','Ich gebe genauso weiter aus'],
+         ['Nunca mais gasto nisso','Ich gebe nie wieder dafür aus']],
       c:0,
       tip:['Ver para onde o dinheiro vai é metade do caminho. Um teto combinado é a outra metade — proibir não é planejar.',
            'Zu sehen, wohin das Geld geht, ist die halbe Miete. Ein vereinbartes Limit ist die andere — Verbieten ist kein Planen.']});
   } else {
     const price = have + (2 + (day % 4)) * 3, wk = Math.max(1, Math.ceil((price - have) / 3));
+    const sem = function(n){ return [n+(n===1?' semana':' semanas'), n+(n===1?' Woche':' Wochen')]; };
     bank.push({k:'plan',
       sit:['Você tem €'+have+', o seu sonho custa €'+price+' e você consegue guardar €3 por semana.',
            'Du hast €'+have+', dein Traum kostet €'+price+' und du kannst €3 pro Woche sparen.'],
@@ -3143,6 +3218,8 @@ function foxScenarioBank(){
       o:[[String(Math.max(1,wk-1)),String(Math.max(1,wk-1))],
          [String(wk),String(wk)],
          [String(wk+2),String(wk+2)]],
+      se:'🎯', e:[String(Math.max(1,wk-1)), String(wk), String(wk+2)],
+      s:[sem(Math.max(1,wk-1)), sem(wk), sem(wk+2)],
       c:1,
       tip:['Um sonho com número de semanas deixa de ser sonho e vira plano.',
            'Ein Traum mit einer Wochenzahl ist kein Traum mehr, sondern ein Plan.']});
@@ -3156,9 +3233,12 @@ function foxQuizToday(){
   const qs = [ fixed[day % fixed.length], fixed[(day+2) % fixed.length], pers ];
   return qs.map(x=>({
     k: x.k,
+    se:  x.se || '💭',
+    e:   x.e  || ['•','•','•'],
     sit: L(x.sit[0], x.sit[1]),
     q:   L(x.q[0], x.q[1]),
     o:   x.o.map(pp=>L(pp[0], pp[1])),
+    s:   (x.s || x.o).map(pp=>L(pp[0], pp[1])),
     oPt: x.o.map(pp=>pp[0]),
     oDe: x.o.map(pp=>pp[1]),
     c:   x.c,
@@ -3200,7 +3280,7 @@ function renderFox(){
     + '<div class="ks" style="margin-bottom:8px">'+(hungry?L('com fominha de aprender 💭','hat Hunger auf Wissen 💭'):L('feliz e curiosa ✨','glücklich und neugierig ✨'))+'</div>'
     + (fedToday
         ? '<div class="ks" style="margin-top:8px">'+L('já decidiu hoje 🌟 amanhã tem outro cenário','heute schon entschieden 🌟 morgen gibt es ein neues Szenario')+'</div>'
-        : '<div class="ks" style="margin-top:8px;font-weight:700;color:var(--ink);text-decoration:underline" onclick="event.stopPropagation();openFoxQuiz()">'+L('💭 tem um cenário de decisão esperando por você','💭 ein Entscheidungs-Szenario wartet auf dich')+'</div>')
+        : '<button class="scn-invite" onclick="event.stopPropagation();openFoxQuiz()">'+L('💭 tem um cenário de decisão esperando por você','💭 ein Entscheidungs-Szenario wartet auf dich')+'</button>')
     + '<div class="ks" style="margin-top:6px">🔥 '+(f.streak||0)+' '+L('dias seguidos','Tage in Folge')+'</div>'
     + '</div>';
 }
@@ -3227,20 +3307,53 @@ function foxQuizRelang(){
   if(FOXQVIEW.mode==='a') foxAnswerRender(FOXQVIEW.idx); else foxQuizRender();
 }
 function b5SkillOf(k){ return B5_SKILLS.filter(function(s){ return s.k===k; })[0] || null; }
+// Leitura em voz alta. Aos 3–6 anos a criança ainda não lê: sem áudio o cenário
+// vira um teste de leitura disfarçado de decisão — e passa a medir a coisa
+// errada. Ritmo 0,92 e tom levemente mais agudo é o que essa faixa acompanha.
+function foxSay(){
+  const s=FOXQ; if(!s) return; const q=s.qs[s.i]; if(!q) return;
+  try{
+    const sy=window.speechSynthesis;
+    if(!sy){ toast(L('Este aparelho não lê em voz alta.','Dieses Gerät kann nicht vorlesen.')); return; }
+    sy.cancel();
+    const partes=[q.sit, q.q].concat(q.o.map(function(o,i){ return (i+1)+'. '+BI((q.s&&q.s[i])||o); }));
+    partes.forEach(function(t){
+      const u=new SpeechSynthesisUtterance(String(t).replace(/<[^>]*>/g,' '));
+      u.lang=(typeof LANG!=='undefined'&&LANG==='de')?'de-DE':'pt-BR';
+      u.rate=0.92; u.pitch=1.08;
+      sy.speak(u);
+    });
+  }catch(e){}
+}
+function foxHush(){ try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){} }
 function foxQuizRender(){
   const s=FOXQ; if(!s) return; if(s.i>=s.qs.length) return foxQuizDone();
   FOXQVIEW={mode:'q'};
+  foxHush();
   const q=s.qs[s.i], sk=b5SkillOf(q.k);
+  // 3–6 anos: memória de trabalho de ~3 blocos. Uma linha por escolha, e só.
+  // 7–10: cabe a frase longa embaixo, que é onde mora a nuance.
+  const pre = (typeof state!=='undefined' && state.phase<=0);
+  const dots = s.qs.map(function(_,i){ return '<span class="scn-dot'+(i<s.i?' done':(i===s.i?' now':''))+'"></span>'; }).join('');
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(56,{stage:ensureFox().stage})+'</div>'
-    + '<div class="klabel" style="text-align:center">'+L('cenário de decisão','Entscheidungs-Szenario')+' '+(s.i+1)+'/'+s.qs.length
+    + '<div class="scn-dots">'+dots+'</div>'
+    + '<div class="scn-scene"><div class="se">'+q.se+'</div><div class="st">'+BI(q.sit)+'</div></div>'
+    + '<div class="scn-q">'+BI(q.q)+'</div>'
+    + '<button class="scn-say" onclick="foxSay()">🔊 '+L('ouvir a pergunta','Frage anhören')+'</button>'
+    + q.o.map(function(opt,idx){
+        const ic=String((q.e&&q.e[idx])||'•'), curto=(q.s&&q.s[idx])||opt;
+        const seg = BI(curto), longa = BI(opt);
+        return '<button class="scn-opt" onclick="foxAnswer('+idx+')">'
+          + '<span class="oe'+(ic.length>2?' num':'')+'">'+ic+'</span>'
+          + '<span class="ob"><span class="ot">'+seg+'</span>'
+          + ((pre||seg===longa)?'':'<span class="os">'+longa+'</span>')+'</span></button>';
+      }).join('')
+    + '<div class="klabel" style="text-align:center;margin-top:6px">'+L('cenário de decisão','Entscheidungs-Szenario')+' '+(s.i+1)+'/'+s.qs.length
     +   (sk ? ' · '+sk.ic+' '+L(sk.pt, sk.de) : '')+'</div>'
-    + '<div class="sh-sub" style="text-align:center;margin:8px 2px 2px">'+BI(q.sit)+'</div>'
-    + '<div class="sh-title" style="text-align:center;font-size:18px;margin:4px 2px 14px">'+BI(q.q)+'</div>'
-    + q.o.map((opt,idx)=>'<button class="kbtn line" style="margin-bottom:8px;text-align:left" onclick="foxAnswer('+idx+')">'+BI(opt)+'</button>').join('')
-    + (s.i===0 ? '<div class="note" style="text-align:center;margin:10px 2px 0">'
+    + (s.i===0 ? '<div class="note" style="text-align:center;margin:8px 2px 0">'
         + L('Aqui ninguém tira nota. É uma decisão de verdade, em tamanho pequeno — e ela entra no seu Diagnóstico 5D.',
             'Hier gibt niemand Noten. Es ist eine echte Entscheidung im Kleinformat — und sie fließt in deine 5D-Diagnose ein.')+'</div>' : '')
-    + '<button class="quiet" style="width:100%;margin-top:4px;padding:10px" onclick="closeSheet()">'+L('Agora não','Jetzt nicht')+'</button>');
+    + '<button class="quiet" style="width:100%;margin-top:8px;padding:10px" onclick="foxHush();closeSheet()">'+L('Agora não','Jetzt nicht')+'</button>');
 }
 function foxAnswer(idx){
   const s=FOXQ; if(!s) return;
@@ -3259,10 +3372,11 @@ function foxAnswer(idx){
 function foxAnswerRender(idx){
   const s=FOXQ; if(!s) return; const q=s.qs[s.i]; const ok=idx===q.c;
   FOXQVIEW={mode:'a', idx:idx};
+  foxHush();
   const sk=b5SkillOf(q.k);
   showSheet('<div class="grab"></div><div style="text-align:center">'+foxSvg(64,{glow:ok, stage:ensureFox().stage})+(ok?' <span style="font-size:34px">🎉</span>':'')+'</div>'
-    + '<div class="sh-title" style="text-align:center">'+(ok?L('Boa decisão!','Gute Entscheidung!'):L('Dá pra decidir melhor','Da geht es besser'))+'</div>'
-    + '<div class="sh-sub" style="text-align:center">'+BI(q.tip)+'</div>'
+    + '<div class="sh-title" style="text-align:center;font-size:24px;margin-top:8px">'+(ok?L('Boa decisão!','Gute Entscheidung!'):L('Dá pra decidir melhor','Da geht es besser'))+'</div>'
+    + '<div class="scn-tip">'+BI(q.tip)+'</div>'
     + (sk ? '<div class="note" style="text-align:center;margin:8px 2px 0">'
         + L('essa escolha exercita ','diese Wahl übt ')+sk.ic+' <b>'+L(sk.pt, sk.de)+'</b>'
         + L(' — e fica registrada no seu Diagnóstico 5D',' — und wird in deiner 5D-Diagnose vermerkt')+'</div>' : '')
@@ -4063,6 +4177,7 @@ function openDemoShopSheet(){
     + '<button class="shopitem" onclick="closeSheet();tryBlocked()">'
     + '<span class="si-e">🎮</span><span><span class="si-n">'+L('Jogo online (bloqueado)','Online-Spiel (gesperrt)')+'</span>'
     + '<div class="si-s">'+L('online · categoria na blacklist — vai ser recusado','online · Kategorie auf der Sperrliste — wird abgelehnt')+'</div></span><span class="si-p">€9,99</span></button>'
+    + '<div class="note tkb">'+L('Numa recusa, a Treezor devolve na transação um authorizationResponseCode e um authorizationNote com o texto real da rede. As recusas deste protótipo correspondem a: 00 aprovado · 51 "Insufficient funds" · "LIMIT PAYMENT EXCEEDED DAY" (limite do dia) · "MCC NOT ALLOWED" (categoria bloqueada) · "MDC DECLINED" (grupo de restrição) · "DR: Requires SCA" · 54 cartão expirado · 55 PIN inválido.','Bei einer Ablehnung liefert Treezor in der Transaktion einen authorizationResponseCode und eine authorizationNote mit dem echten Text des Netzwerks. Die Ablehnungen dieses Prototyps entsprechen: 00 genehmigt · 51 "Insufficient funds" · "LIMIT PAYMENT EXCEEDED DAY" (Tageslimit) · "MCC NOT ALLOWED" (gesperrte Kategorie) · "MDC DECLINED" (Restriktionsgruppe) · "DR: Requires SCA" · 54 Karte abgelaufen · 55 ungültige PIN.')+'</div>'
     + '<div class="sh-note">'+TK(
         L('Este menu existe só para você experimentar: no dia a dia a compra acontece na loja ou no site e aparece aqui sozinha, com lojista, valor, categoria e local.',
           'Dieses Menü gibt es nur zum Ausprobieren: Im Alltag findet der Kauf im Geschäft oder auf der Website statt und erscheint hier von allein — mit Händler, Betrag, Kategorie und Ort.'),
@@ -4456,7 +4571,9 @@ const SUBCATS = [
 const SUB_GROUP = {}; SUBCATS.forEach(s=> SUB_GROUP[s.name]=s.group);
 
 // ===== Bloqueio de categorias no cartão (mesma taxonomia fina dos combinados) =====
-// Cada categoria bloqueada = um mccRestrictionGroup na Treezor. Bloquear o grupo cobre todos os MCC dele.
+// Treezor: POST /v1/mccRestrictionGroups cria o grupo (name, isWhitelist:false, mcc[]), e o cartão
+// aponta para UM único mccRestrictionGroupId. Logo o app envia a UNIÃO dos MCC de todas as categorias
+// bloqueadas em um só grupo, reescrito a cada alteração (webhooks mccGroup.create/update/cancel).
 const FIXED_BLOCK = 'Conteúdo e produtos 18+';   // trava fixa: MCC adultos nunca liberam em cartão de menor
 function catGroupOf(name){ return SUB_GROUP[name] || (BUDGET_CATS.some(g=>g.name===name) ? name : null); }
 function catIcon(name){
@@ -4841,9 +4958,9 @@ function showStandingOrder(){
     + '<div class="kcard" style="text-align:center;margin-bottom:12px">'
     + '<div class="klabel">titular</div><div style="font-weight:750;margin-bottom:8px">João S.</div>'
     + '<div class="klabel">IBAN da sua wallet</div>'
-    + '<div style="font-weight:750;font-size:14.5px;font-variant-numeric:tabular-nums;margin-bottom:8px">DE89 3704 0044 0532 0001 P41</div>'
-    + '<div class="klabel">BIC</div><div style="font-weight:750">TRZOFR21XXX</div></div>'
-    + '<button class="kbtn" onclick="copyIban(\'DE89370400440532 0001P41\')">Copiar IBAN</button>'
+    + '<div style="font-weight:750;font-size:14.5px;font-variant-numeric:tabular-nums;margin-bottom:8px">DE22 3704 0044 0532 0001 41</div>'
+    + '<div class="klabel">BIC</div><div style="font-weight:750">TRZODEB2XXX</div></div>'
+    + '<button class="kbtn" onclick="copyIban(\'DE22370400440532000141\')">Copiar IBAN</button>'
     + '<div class="sh-note">Sugestão: agende para 2 dias antes da mesada das crianças. Sem custo, você no controle.</div>';
   showSheet(html);
 }
@@ -4991,7 +5108,7 @@ const CARD_DESIGNS = {
   dino:   {bg:'linear-gradient(135deg,#0e3b2e,#128a5f)', name:'Dino', e:'🦖'},
 };
 function ensureCardDefaults(c){
-  c.card.last4 = c.card.last4 || '5D21';
+  c.card.last4 = c.card.last4 || '5421';
   c.card.design = c.card.design || 'classic';
   if(c.card.travel === undefined) c.card.travel = null;
   if(c.card.pinBlocked === undefined) c.card.pinBlocked = false;
@@ -5064,7 +5181,8 @@ function createChildProfile(){
 }
 
 // ===== CARTÃO FÍSICO: criança pede → responsável aprova → chega → ativa =====
-// (Treezor: virtual convertível em físico; criação → 3DS → ativação)
+// (Treezor: POST /v1/cards/CreateVirtual → PUT /v1/cards/{cardId}/ConvertVirtual → PUT /v1/cards/{cardId}/Activate
+//  eventos: card.createvirtual · card.requestphysical · card.convertvirtual · card.activate · card.lockunlock)
 // ===== 1. PERDI MEU CARTÃO (lost/stolen → destroy → reissue + renewal) =====
 function lostBoxHtml(kid){
   const pend = state.requests.some(r=>r.lostCard && r.status==='pending');
@@ -5213,11 +5331,11 @@ function open3DS(v, name, icon, opts){
   showSheet('<div class="grab"></div><div class="sh-emoji">🔐</div>'
     + '<div class="sh-title">Confirmação de segurança</div>'
     + '<div class="sh-sub">'+name+' · '+fmt0(v)+TK(L(' · compra online — o banco pediu uma confirmação.',' · Online-Einkauf — die Bank hat eine Bestätigung angefordert.'),
-        L(' · compra online — o emissor pediu SCA (3DS).',' · Online-Einkauf — der Kartenaussteller hat SCA (3DS) angefordert.'))+'</div>'
+        L(' · compra online — o emissor pediu SCA (3DS). O resultado do desafio volta para a Treezor em POST /v1/auth-requests/{authRequestId}/result.',' · Online-Einkauf — der Kartenaussteller hat SCA (3DS) angefordert. Das Ergebnis der Abfrage geht per POST /v1/auth-requests/{authRequestId}/result an Treezor zurück.'))+'</div>'
     + (kid
       ? '<div class="sh-note" style="margin-bottom:12px">'+L('No modo Kids, quem confirma é o <b>telefone do seu responsável</b>. Ele recebeu o pedido agora. 📲','Im Kids-Modus bestätigt das <b>Telefon deiner Eltern</b>. Sie haben die Anfrage gerade erhalten. 📲')+'</div>'
         + '<button class="kbtn" onclick="closeSheet();informParent(\'🔐\', L(\'Você aprovou a confirmação de segurança da compra de \'+state.name+\': '+name+' ('+fmt0(v)+').\',\'Sie haben die 3DS-Abfrage für den Kauf von \'+state.name+\' freigegeben: '+name+' ('+fmt0(v)+').\'));spend('+v+',\''+name+'\',\''+icon+'\',{merchant:\''+opts.merchant+'\',online:true})">'+L('⏩ simular OK do responsável · demo','⏩ OK der Eltern simulieren · Demo')+'</button>'
-      : '<div class="sh-note" style="margin-bottom:12px">'+L('Confirme no seu dispositivo — é assim que ninguém compra no seu nome. Abaixo de €30, a rede costuma dispensar (isenção de valor baixo).','Bestätige auf deinem Gerät — so kauft niemand in deinem Namen. Unter €30 verzichtet das Netzwerk meist darauf (Ausnahme für Kleinbeträge).')+'</div>'
+      : '<div class="sh-note" style="margin-bottom:12px">'+TK(L('Confirme no seu dispositivo — é assim que ninguém compra no seu nome. Abaixo de €30, a rede costuma dispensar (isenção de valor baixo).','Bestätige auf deinem Gerät — so kauft niemand in deinem Namen. Unter €30 verzichtet das Netzwerk meist darauf (Ausnahme für Kleinbeträge).'),L('Confirme no seu dispositivo. A isenção de valor baixo chega na transação como exemptionType3ds; o resultado do desafio é enviado em POST /v1/auth-requests/{authRequestId}/result, endpoint que a Treezor lista como protegido por SCA por operação.','Bestätige auf deinem Gerät. Die Kleinbetragsausnahme kommt in der Transaktion als exemptionType3ds an; das Ergebnis der Abfrage wird per POST /v1/auth-requests/{authRequestId}/result gesendet — ein Endpunkt, den Treezor als pro Operation SCA-geschützt aufführt.'))+'</div>'
         + '<button class="kbtn" onclick="closeSheet();spend('+v+',\''+name+'\',\''+icon+'\',{merchant:\''+opts.merchant+'\',online:true})">'+TK(L('✅ Sou eu — confirmar','✅ Das bin ich — bestätigen'),L('✅ Sou eu — confirmar (SCA)','✅ Das bin ich — bestätigen (SCA)'))+'</button>')
     + '<button class="quiet" onclick="closeSheet();toast(TK(L(\'Compra cancelada na confirmação de segurança.\',\'Kauf bei der Sicherheitsbestätigung abgebrochen.\'),L(\'Compra cancelada no desafio 3DS.\',\'Kauf bei der 3DS-Abfrage abgebrochen.\')))">'+L('cancelar','abbrechen')+'</button>');
 }
@@ -6077,8 +6195,8 @@ function applyCalc(v){
 
 // ---- dados da conta (cada wallet Treezor tem IBAN próprio) ----
 const ACCOUNTS = {
-  card:{ name:'Saldo disponível', iban:'DE89 3704 0044 0532 0154 D21', purpose:'é a conta do cartão — o que entra aqui, dá para gastar' },
-  cofre:{ name:'Saldo poupado', iban:'DE89 3704 0044 0532 0157 C03', purpose:'dinheiro recebido e poupança — o que entra aqui vai para as casinhas' },
+  card:{ name:'Saldo disponível', iban:'DE03 3704 0044 0532 0154 21', purpose:'é a conta do cartão — o que entra aqui, dá para gastar' },
+  cofre:{ name:'Saldo poupado', iban:'DE52 3704 0044 0532 0157 03', purpose:'dinheiro recebido e poupança — o que entra aqui vai para as casinhas' },
 };
 function acctName(which){ return which==='card' ? L('Saldo disponível','Verfügbares Guthaben') : L('Saldo poupado','Gespartes Guthaben'); }
 function acctBlock(which){
@@ -6100,7 +6218,7 @@ function acctBlock(which){
 function openAccountSheet(which){
   let html = '<div class="grab"></div><div class="sh-emoji msy">&#xE84F;</div>'
     + '<div class="sh-title">'+(which ? acctName(which) : L('Minha conta','Mein Konto'))+'</div>'
-    + '<div class="sh-sub">Titular: '+state.name+' S. (menor) · resp.: João S. · BIC TRZOFR21XXX — '
+    + '<div class="sh-sub">Titular: '+state.name+' S. (menor) · resp.: João S. · BIC TRZODEB2XXX — '
     + 'Treezor (grupo Société Générale)</div>';
   html += which ? acctBlock(which) : acctBlock('cofre') + acctBlock('card');
   html += '<div class="sh-note">Transferências SEPA para o IBAN caem direto na wallet — o dinheiro de '
@@ -6243,10 +6361,19 @@ function famDevices(){ return family.devices || (family.devices = [
   {id:1, name:'iPhone de João', me:true, enrolled:'12/05/2026'},
   {id:2, name:'iPad da família', me:false, enrolled:'20/05/2026'} ]); }
 function childKyc(c){ return c.kyc || (c.kyc = {status:'Validated', method:'Documents'}); }
-// O estado cru vem da instituicao (Pending · Validated · Review needed · Refused).
+// O estado cru vem da instituicao. Na Treezor o campo e kycReview (0 NONE · 1 PENDING · 2 VALIDATED
+// · 3 REFUSED · 4 INVESTIGATING · 5 CLOSED · 6 REVIEW_OPEN · 7 REVIEW_PENDING) e kycLevel
+// (0 NONE · 1 LIGHT · 2 REGULAR · 3 STRONG · 4 REFUSED). Os rotulos abaixo cobrem os dois formatos.
 // Na leitura normal ele aparece traduzido; o rotulo original volta com o modo tecnico.
 const KYC_LABEL = {'Validated':['Verificado','Verifiziert'], 'Pending':['Em análise','In Prüfung'],
-  'Review needed':['Precisa de revisão','Prüfung nötig'], 'Refused':['Recusado','Abgelehnt']};
+  'Review needed':['Precisa de revisão','Prüfung nötig'], 'Refused':['Recusado','Abgelehnt'],
+  // valores crus do campo kycReview da Treezor — aceitos direto do webhook user.kycreview
+  'VALIDATED':['Verificado','Verifiziert'], 'PENDING':['Em análise','In Prüfung'],
+  'REFUSED':['Recusado','Abgelehnt'], 'NONE':['Ainda não enviado','Noch nicht eingereicht'],
+  'INVESTIGATING':['Em análise aprofundada','In vertiefter Prüfung'],
+  'REVIEW_OPEN':['Precisa de revisão','Prüfung nötig'],
+  'REVIEW_PENDING':['Revisão em andamento','Prüfung läuft'],
+  'CLOSED':['Encerrado','Geschlossen']};
 function kycTag(s){ const w = KYC_LABEL[s]; return TK(w ? L(w[0], w[1]) : s, s); }
 
 function openProfileHub(){
@@ -6336,13 +6463,13 @@ function openKycSheet(){
   }
   showSheet('<div class="grab"></div><div class="sh-emoji msy">&#xE8E8;</div>'
     + '<div class="sh-title">Documentos & verificação</div>'
-    + '<div class="sh-sub tkb">Estados Treezor: Pending · Validated · Review needed · Refused.</div>'
+    + '<div class="sh-sub tkb">kycReview na Treezor: NONE · PENDING · VALIDATED · REFUSED · INVESTIGATING · CLOSED · REVIEW_OPEN · REVIEW_PENDING.</div>'
     + rows
     + '<button class="'+(parent?'btn':'kbtn')+' secondary small" style="width:100%;margin-top:10px" onclick="toast(TK(L(\'📄 Novo documento enviado — a verificação recomeça.\',\'📄 Neues Dokument gesendet — die Prüfung beginnt neu.\'),L(\'📄 Novo documento enviado — POST /v1/documents + nova análise KYC.\',\'📄 Neues Dokument gesendet — POST /v1/documents + neue KYC-Prüfung.\')))">'+L('Reenviar documento','Dokument erneut senden')+'</button>'
-    + (parent&&TECH?'<button class="btn secondary small" style="width:100%;margin-top:8px" onclick="toast(L(\'🔄 Revalidação solicitada (Kycreview) — usada quando o status vira Review needed.\',\'🔄 Revalidierung angefordert (Kycreview) — wird verwendet, wenn der Status auf Review needed wechselt.\'))">'+L('Revalidar (Review needed)','Revalidieren (Review needed)')+'</button>':'')
+    + (parent&&TECH?'<button class="btn secondary small" style="width:100%;margin-top:8px" onclick="toast(L(\'🔄 Revalidação solicitada — PUT /v1/users/{userId}/Kycreview; a resposta chega no webhook user.kycreview.\',\'🔄 Revalidierung angefordert — PUT /v1/users/{userId}/Kycreview; die Antwort kommt per Webhook user.kycreview.\'))">'+L('Revalidar (Kycreview)','Revalidieren (Kycreview)')+'</button>':'')
     + '<div class="sh-note" style="margin-top:8px">'+TK(
         L('A verificação é refeita de tempos em tempos — não é só no cadastro.','Die Verifizierung wird von Zeit zu Zeit wiederholt — nicht nur bei der Registrierung.'),
-        L('A verificação é revalidada de tempos em tempos (Review needed) — não é só no cadastro.','Die Verifizierung wird von Zeit zu Zeit erneuert (Review needed) — nicht nur bei der Registrierung.'))+'</div>');
+        L('A verificação é revalidada de tempos em tempos (kycReview volta a REVIEW_OPEN) — não é só no cadastro.','Die Verifizierung wird von Zeit zu Zeit erneuert (kycReview wechselt zurück auf REVIEW_OPEN) — nicht nur bei der Registrierung.'))+'</div>');
 }
 function openDevicesSheet(){
   const ds = famDevices();
@@ -6431,16 +6558,16 @@ function openDisputeSheet(txid){
   showSheet('<div class="grab"></div><div class="sh-emoji">🚩</div>'
     + '<div class="sh-title">Contestar compra</div>'
     + '<div class="sh-sub">'+TK(L('Isso abre uma contestação — a instituição analisa e, se aceita, o valor volta.','Das eröffnet eine Reklamation — das Institut prüft, und bei Annahme kommt der Betrag zurück.'),
-        L('Isso abre uma contestação (chargeback) — a Treezor analisa e, se aceita, o valor volta.','Das eröffnet eine Reklamation (Chargeback) — Treezor prüft, und bei Annahme kommt der Betrag zurück.'))+'</div>'
+        L('Isso registra uma contestação. Nota técnica: a API pública da Treezor documenta chargeback só do lado adquirente (GET /v1/topups/cards/chargebacks/{chargebackId}). A contestação do portador sobre um cartão emitido é um fluxo operacional com o emissor e a rede — item em aberto com a Treezor.','Das erfasst eine Reklamation. Technischer Hinweis: Die öffentliche Treezor-API dokumentiert Chargebacks nur auf der Acquiring-Seite (GET /v1/topups/cards/chargebacks/{chargebackId}). Die Reklamation des Karteninhabers zu einer ausgegebenen Karte ist ein operativer Ablauf mit Emittent und Netzwerk — offener Punkt mit Treezor.'))+'</div>'
     + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">'
     + reasons.map(r=>'<button class="actrow" onclick="submitDispute()"><span class="ar-t">'+r+'</span><span class="ar-c">›</span></button>').join('')
     + '</div>'
     + '<div class="sh-note">Antes de contestar, confira se não foi uma assinatura esquecida. Contestação de má-fé pode ter consequências.</div>');
 }
 function submitDispute(){ closeSheet(); toast(TK(L('🚩 Contestação aberta — a instituição vai analisar. Você acompanha por aqui.','🚩 Reklamation eröffnet — das Institut prüft sie. Du kannst den Verlauf hier verfolgen.'),
-    L('🚩 Contestação aberta — a Treezor vai analisar. Você acompanha por aqui.','🚩 Reklamation eröffnet — Treezor wird sie prüfen. Du kannst den Verlauf hier verfolgen.')));
+    L('🚩 Contestação registrada — segue pelo emissor e pela rede. Endpoint do portador não consta da API pública: a confirmar com a Treezor.','🚩 Reklamation erfasst — sie läuft über Emittent und Netzwerk. Endpunkt für Karteninhaber steht nicht in der öffentlichen API: mit Treezor zu klären.')));
   informParent('🚩', TK(L('Uma compra do cartão foi <b>contestada</b>. Em análise pela instituição.','Ein Kartenkauf wurde <b>angefochten</b>. Wird vom Institut geprüft.'),
-    L('Uma compra do cartão foi <b>contestada</b> (chargeback aberto). Em análise pela Treezor.','Ein Kartenkauf wurde <b>angefochten</b> (Chargeback eröffnet). Wird von Treezor geprüft.'))); }
+    L('Uma compra do cartão foi <b>contestada</b>. Encaminhada ao emissor e à rede — o endpoint de contestação do portador não consta da API pública da Treezor (item aberto).','Ein Kartenkauf wurde <b>angefochten</b>. An Emittent und Netzwerk weitergeleitet — der Endpunkt für Karteninhaber-Reklamationen steht nicht in der öffentlichen Treezor-API (offener Punkt).'))); }
 function walletsTotal(c){ const s=c.balances; return Math.round((s.despesa+s.desenv+s.desejo+s.defesa+s.dign)*100)/100; }
 function openCloseAccountSheet(){
   const opts = family.children.map((c,i)=>'<button class="actrow" onclick="openCloseFlow('+i+')"><span class="ar-e">'+c.avatar+'</span>'
@@ -6466,8 +6593,8 @@ function openCloseFlow(i){
     + '<button class="btn" style="background:#d03b3b;border-color:#d03b3b" onclick="closeAccountConfirm('+i+')">Sacar tudo e encerrar</button>'
     + '<button class="btn secondary small" style="width:100%;margin-top:8px" onclick="openCloseAccountSheet()">‹ voltar</button>'
     + '<div class="sh-note" style="margin-top:8px">'+TK(L('Sem tarifa: você recebe o valor cheio.','Ohne Gebühr: Sie erhalten den vollen Wert.'),
-        L('Passos reais: payout SEPA do saldo → DELETE /v1/wallets (CANCELED) → encerramento do usuário. Sem tarifa de resgate.',
-          'Echte Schritte: SEPA-Auszahlung des Guthabens → DELETE /v1/wallets (CANCELED) → Kontoschließung des Nutzers. Keine Auszahlungsgebühr.'))+'</div>');
+        L('Passos reais: payout SEPA do saldo → DELETE /v1/wallets/{walletId} (CANCELED) → encerramento do usuário. Sem tarifa de resgate.',
+          'Echte Schritte: SEPA-Auszahlung des Guthabens → DELETE /v1/wallets/{walletId} (CANCELED) → Kontoschließung des Nutzers. Keine Auszahlungsgebühr.'))+'</div>');
 }
 function closeAccountConfirm(i){
   const c = family.children[i]; if(!c) return;
@@ -6479,11 +6606,13 @@ function closeAccountConfirm(i){
   informParent('🗝️', L('Conta de <b>'+c.name+'</b> encerrada (demo): saldo de '+fmt0(tot)+' resgatado ao par e wallets canceladas. Dados retidos pelo prazo legal.','Konto von <b>'+c.name+'</b> geschlossen (Demo): Guthaben von '+fmt0(tot)+' zum Nennwert ausgezahlt und Wallets storniert. Daten für die gesetzliche Frist aufbewahrt.'));
 }
 // modo Kids: dinheiro que chega de fora é DINHEIRO (fruto do trabalho de alguém), não "presente"
-// vIBAN por sonho: cada casinha pode ter um IBAN virtual próprio → o dinheiro já cai no lugar certo
+// vIBAN por sonho: cada casinha pode ter um IBAN virtual próprio → o dinheiro já cai no lugar certo.
+// Treezor: vIBAN NAO vem habilitado por padrao — precisa ser ativado no contrato. Se nao houver vIBAN,
+// o fallback e o IBAN unico do cofre + regra de alocacao nossa a partir do webhook payin.create.
 function openGiftSheet(targetWid){
   const ws = wishesOf('desejo');
   const w = targetWid ? ws.find(x=>x.id===targetWid) : null;
-  const viban = w ? 'DE89 •••• •••• W'+String(w.id).padStart(2,'0') : 'DE89 •••• •••• 7C03';
+  const viban = w ? 'DE52 •••• •••• 57'+String(90+w.id).padStart(2,'0') : 'DE52 •••• •••• 5703';
   showSheet('<div class="grab"></div><div class="sh-emoji">'+(w?w.icon:'🏦')+'</div>'
     + '<div class="sh-title">Minha conta</div>'
     + '<div class="sh-sub">É aqui que cai o dinheiro que te mandam. Escolha onde ele deve cair e mostre o IBAN para o adulto:</div>'
@@ -7322,7 +7451,7 @@ function openActivitySheet(keep){
   showSheet(html);
 }
 // O resgate real na Treezor são DOIS eventos: transferência instantânea
-// Cofre→Wallet Cartão (POST /v1/transfers) e depois a compra no cartão
+// Cofre→Wallet Cartão (POST /v1/transfer) e depois a compra no cartão
 // (webhook cardtransaction.create, com MCC para categorizar).
 function executeRedeem(pillar, name, price, icon, wish){
   state.balances[pillar] -= price;      // sai do razão do Cofre
@@ -7343,7 +7472,7 @@ function approvePhysical(){
   state.card.physical = 'shipping';
   informChild('💳 Aprovado! É o seu mesmo cartão virando plástico também — mesmo número. Chega em ~5 dias no correio. 📬');
   toast(TK(L('✅ Aprovado — o cartão físico chega com o mesmo número do virtual.','✅ Freigegeben — die physische Karte kommt mit derselben Nummer wie die virtuelle.'),
-    L('✅ Aprovado — ConvertVirtual na Treezor: o virtual vira plástico mantendo o mesmo PAN, CVC e validade.','✅ Freigegeben — ConvertVirtual bei Treezor: Die virtuelle Karte wird zur Plastikkarte, PAN, CVC und Gültigkeitsdatum bleiben gleich.')));
+    L('✅ Aprovado — PUT /v1/cards/{cardId}/ConvertVirtual: o virtual vira plástico mantendo o mesmo PAN, CVC e validade (evento card.convertvirtual).','✅ Freigegeben — PUT /v1/cards/{cardId}/ConvertVirtual: Die virtuelle Karte wird zur Plastikkarte, PAN, CVC und Gültigkeitsdatum bleiben gleich (Event card.convertvirtual).')));
   render();
 }
 function approveReq(id){
@@ -9178,7 +9307,7 @@ function onbGo(n){
       + '<div class="ocard">'
       + '<div class="ochk">📄 Documento de identidade <span class="st" id="ok1">…</span></div>'
       + '<div class="ochk">🤳 Selfie de vida (Liveness) <span class="st" id="ok2">…</span></div>'
-      + '<div class="ochk">'+TK(L('🏦 Análise da instituição','🏦 Prüfung durch das Institut'),'🏦 Análise Treezor · webhook kycreview')+' <span class="st" id="ok3">…</span></div></div>'
+      + '<div class="ochk">'+TK(L('🏦 Análise da instituição','🏦 Prüfung durch das Institut'),'🏦 Análise Treezor · webhook user.kycreview')+' <span class="st" id="ok3">…</span></div></div>'
       + '<div id="onbNext1"></div>';
     B.innerHTML = h; window.scrollTo(0,0);
     setTimeout(()=>{ const e=document.getElementById('ok1'); if(e) e.textContent='✓'; }, 500);
@@ -9486,7 +9615,7 @@ const I18N = {
   "🎮 Jogos ✕":"🎮 Spiele ✕",
   "🏖️ Viagem para a praia":"🏖️ Reise ans Meer",
   "🏦 Análise Treezor":"🏦 Treezor-Prüfung",
-  "🏦 Análise Treezor · webhook kycreview":"🏦 Treezor-Prüfung · Webhook kycreview",
+  "🏦 Análise Treezor · webhook user.kycreview":"🏦 Treezor-Prüfung · Webhook user.kycreview",
   "🏦 dados completos para o adulto ›":"🏦 vollständige Daten für Erwachsene ›",
   "🏦 Wallet Cartão · IBAN próprio":"🏦 Karten-Wallet · eigene IBAN",
   "🏦 Wallet Cofre · IBAN próprio":"🏦 Tresor-Wallet · eigene IBAN",
@@ -9518,7 +9647,7 @@ const I18N = {
   "a história desse pote":"die Geschichte dieses Topfes",
   "A mesada não é sobre dinheiro — é sobre a pessoa que ele vai se tornar. A Abordagem 5D, do livro":"Taschengeld geht nicht ums Geld — es geht um den Menschen, der daraus wird. Der 5D-Ansatz aus dem Buch",
   "A tarefa aparece uma vez por mês e volta sozinha depois de aprovada.":"Die Aufgabe erscheint einmal im Monat und kommt nach der Freigabe von allein zurück.",
-  "A verificação é revalidada de tempos em tempos (Review needed) — não é só no cadastro.":"Die Verifizierung wird von Zeit zu Zeit erneuert (Review needed) — nicht nur bei der Registrierung.",
+  "A verificação é revalidada de tempos em tempos (kycReview volta a REVIEW_OPEN) — não é só no cadastro.":"Die Verifizierung wird von Zeit zu Zeit erneuert (kycReview wechselt zurück auf REVIEW_OPEN) — nicht nur bei der Registrierung.",
   "Abrir reclamação":"Beschwerde einreichen",
   "abrir reclamação · contestar cartão":"Beschwerde einreichen · Karte reklamieren",
   "aceito":"akzeptiert",
@@ -9671,8 +9800,8 @@ const I18N = {
   "de Ludo":"von Ludo",
   "de Ludo.":"von Ludo.",
   "quem criou, edita":"wer es erstellt hat, ändert es",
-  "DE89 ···· 5D21 · ver IBAN":"DE89 ···· 5D21 · IBAN ansehen",
-  "DE89 ···· 7C03 · ver IBAN":"DE89 ···· 7C03 · IBAN ansehen",
+  "DE03 ···· 5421 · ver IBAN":"DE03 ···· 5421 · IBAN ansehen",
+  "DE52 ···· 5703 · ver IBAN":"DE52 ···· 5703 · IBAN ansehen",
   "Débito automático (SEPA)":"Lastschrift (SEPA)",
   "Declaro ter o consentimento do outro responsável legal (ou guarda exclusiva) — BGB §§ 1626/1629.":"Ich erkläre, die Einwilligung des anderen Sorgeberechtigten zu haben (oder alleiniges Sorgerecht) — BGB §§ 1626/1629.",
   "Defesa":"Absicherung",
@@ -9754,7 +9883,7 @@ const I18N = {
   "Esse cofrinho nunca se resgata: ele cresce quietinho pra você sempre poder escolher.":"Dieses Sparschwein wird nie ausgezahlt: es wächst leise, damit du immer wählen kannst.",
   "Esse dinheiro cresceu":"Dieses Geld ist gewachsen",
   "Está pronto(a)?":"Bist du bereit?",
-  "Estados Treezor: Pending · Validated · Review needed · Refused.":"Treezor-Status: Pending · Validated · Review needed · Refused.",
+  "kycReview na Treezor: NONE · PENDING · VALIDATED · REFUSED · INVESTIGATING · CLOSED · REVIEW_OPEN · REVIEW_PENDING.":"kycReview bei Treezor: NONE · PENDING · VALIDATED · REFUSED · INVESTIGATING · CLOSED · REVIEW_OPEN · REVIEW_PENDING.",
   "Este telefone vira a sua":"Dieses Telefon wird zu Ihrem",
   "ex.: 1h de FIFA no fim de semana 🎮":"z. B. 1 Std. FIFA am Wochenende 🎮",
   "ex.: Aula de violão":"z. B. Gitarrenunterricht",
@@ -10004,7 +10133,7 @@ const I18N = {
   "Responsável":"Eltern",
   "Responsável (João)":"Eltern (João)",
   "Restaurante":"Restaurant",
-  "Revalidar (Review needed)":"Neu verifizieren (Review needed)",
+  "Revalidar (Kycreview)":"Neu verifizieren (Kycreview)",
   "Revisão do mês, a dois":"Monatsrückblick, zu zweit",
   "Revogar":"Widerrufen",
   "ritmo saudável":"gesundes Tempo",
@@ -10077,7 +10206,7 @@ const I18N = {
   "tetos por categoria, por mês":"Limits pro Kategorie, pro Monat",
   "Tirar o lixo":"Müll rausbringen",
   "Tire dúvidas com a voz do livro. A IA não tem acesso a contas, saldos ou dados — só ao conteúdo de":"Klär Fragen mit der Stimme des Buches. Die KI hat keinen Zugriff auf Konten, Salden oder Daten — nur auf den Inhalt von",
-  "Titular: Ludo S. (menor) · resp.: João S. · BIC TRZOFR21XXX — Treezor (grupo Société Générale)":"Inhaber: Ludo S. (minderjährig) · Erz.-ber.: João S. · BIC TRZOFR21XXX — Treezor (Gruppe Société Générale)",
+  "Titular: Ludo S. (menor) · resp.: João S. · BIC TRZODEB2XXX — Treezor (grupo Société Générale)":"Inhaber: Ludo S. (minderjährig) · Erz.-ber.: João S. · BIC TRZODEB2XXX — Treezor (Gruppe Société Générale)",
   "Toda reclamação tem resposta — e, se não resolver, você pode acionar o mediador.":"Jede Beschwerde bekommt eine Antwort — und wenn sie nicht gelöst wird, können Sie die Schlichtung anrufen.",
   "toda sexta-feira":"jeden Freitag",
   "Todos":"Alle",
@@ -10558,7 +10687,7 @@ const I18N = {
   "por semana.":"pro Woche.",
   "— baseada em gastos reais, não em chute.":"— basierend auf echten Ausgaben, nicht geraten.",
   "Simular dinheiro novo +€10 · demo":"Neues Geld simulieren +€10 · Demo",
-  "S. (menor) · resp.: João S. · BIC TRZOFR21XXX —":"S. (minderjährig) · Erziehungsberechtigter: João S. · BIC TRZOFR21XXX —",
+  "S. (menor) · resp.: João S. · BIC TRZODEB2XXX —":"S. (minderjährig) · Erziehungsberechtigter: João S. · BIC TRZODEB2XXX —",
   "Treezor (grupo Société Générale)":"Treezor (Société-Générale-Gruppe)",
   "Transferências SEPA para o IBAN caem direto na wallet — o dinheiro de":"SEPA-Überweisungen auf die IBAN landen direkt in der Wallet — das Geld von",
   "aniversário vira depósito na casinha. Dados pessoais e KYC ficam na Treezor (instituição regulada,":"Geburtstag wird zur Einzahlung ins Häuschen. Persönliche Daten und KYC bleiben bei Treezor (reguliertes Institut,",
@@ -10600,7 +10729,7 @@ const I18N = {
   "Uma compra do cartão foi":"Ein Kartenkauf wurde",
   "(chargeback aberto). Em análise pela Treezor.":"(Chargeback eröffnet). Wird von Treezor geprüft.",
   ". Informe o IBAN que vai receber o dinheiro.":". Gib die IBAN an, die das Geld empfangen soll.",
-  "Passos reais: payout SEPA do saldo → DELETE /v1/wallets (CANCELED) → encerramento do usuário. Sem tarifa de resgate.":"Echte Schritte: SEPA-Auszahlung des Guthabens → DELETE /v1/wallets (CANCELED) → Kontoschließung des Nutzers. Keine Auszahlungsgebühr.",
+  "Passos reais: payout SEPA do saldo → DELETE /v1/wallets/{walletId} (CANCELED) → encerramento do usuário. Sem tarifa de resgate.":"Echte Schritte: SEPA-Auszahlung des Guthabens → DELETE /v1/wallets/{walletId} (CANCELED) → Kontoschließung des Nutzers. Keine Auszahlungsgebühr.",
   "📋 IBAN copiado — é só colar no app do banco de quem vai transferir.":"📋 IBAN kopiert — einfach in der Banking-App der Person einfügen, die überweist.",
   "Dinheiro da vovó (vIBAN da casinha)":"Geld von Oma (vIBAN vom Häuschen)",
   "Dinheiro recebido":"Geld erhalten",
@@ -10633,7 +10762,7 @@ const I18N = {
   "Do Cofre para o cartão":"Vom Tresor zur Karte",
   "· transferência na hora":"· sofortige Überweisung",
   "💳 Aprovado! É o seu mesmo cartão virando plástico também — mesmo número. Chega em ~5 dias no correio. 📬":"💳 Freigegeben! Es ist deine gleiche Karte, die jetzt auch als Plastikkarte kommt — gleiche Nummer. Sie kommt in ~5 Tagen mit der Post. 📬",
-  "✅ Aprovado — ConvertVirtual na Treezor: o virtual vira plástico mantendo o mesmo PAN, CVC e validade.":"✅ Freigegeben — ConvertVirtual bei Treezor: Die virtuelle Karte wird zur Plastikkarte, PAN, CVC und Gültigkeitsdatum bleiben gleich.",
+  "✅ Aprovado — PUT /v1/cards/{cardId}/ConvertVirtual: o virtual vira plástico mantendo o mesmo PAN, CVC e validade (evento card.convertvirtual).":"✅ Freigegeben — PUT /v1/cards/{cardId}/ConvertVirtual: Die virtuelle Karte wird zur Plastikkarte, PAN, CVC und Gültigkeitsdatum bleiben gleich (Event card.convertvirtual).",
   "💳 Cartão novo! O antigo foi destruído (ninguém usa nunca mais) e o virtual novo JÁ funciona — número novinho.":"💳 Neue Karte! Die alte wurde zerstört (niemand kann sie je wieder benutzen) und die neue virtuelle Karte funktioniert SOFORT — nagelneue Nummer.",
   "O de plástico chega em ~5 dias.":"Die Plastikkarte kommt in ~5 Tagen.",
   "reemitido: antigo destruído (lost), virtual novo ativo na hora":"neu ausgestellt: alte zerstört (lost), neue virtuelle Karte sofort aktiv",
